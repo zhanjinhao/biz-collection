@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: rbac-service
+
+  cloud:
+    nacos:
+      server-addr: ${nacosServer}:${nacosPort}
+      username: ${nacosUserName}
+      password: ${nacosPassword}
+      discovery:
+        namespace: ${nacosNamespace}
+        group: rbac
+      config:
+        file-extension: yaml
+        extension-configs:
+          - data-id: jdbc.yaml
+            refresh: true
+            group: rbac
+          - data-id: redis.yaml
+            refresh: true
+            group: rbac
+        group: rbac
+        namespace: dev
+        enabled: true
+        refresh-enabled: true
+  config:
+    import:
+      - nacos:rbac-service.yaml?refresh=true
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    local-cache-scope: statement
+  type-handlers-package: cn.addenda.bc.bc.mc.typehandler

@@ -1,0 +1,148 @@
+##引入mybatis支持
+$!{mybatissupport.vm}
+
+$!tableInfo.setName($tool.getClassName($tableInfo.obj.name.replaceFirst("t_", "")))
+
+##设置保存名称与保存位置
+$!callback.setFileName($tool.append($!{tableInfo.name}, "Mapper.xml"))
+$!callback.setSavePath($tool.append($modulePath, "/src/main/resources/mapper"))
+
+##拿到主键
+#if(!$tableInfo.pkColumn.isEmpty())
+    #set($pk = $tableInfo.pkColumn.get(0))
+#end
+
+#set($tableName = $tableInfo.obj.name.toLowerCase())
+#set($pkName = $pk.obj.name.toLowerCase())
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="$!{tableInfo.savePackageName}.mapper.$!{tableInfo.name}Mapper">
+
+    <resultMap type="$!{tableInfo.savePackageName}.entity.$!{tableInfo.name}" id="$!{tableInfo.name}Map">
+		#foreach($column in $tableInfo.pkColumn)
+<id property="$!column.name" column="$!column.obj.name.toLowerCase()" jdbcType="$!column.ext.jdbcType"/>
+#end
+    </resultMap>
+	
+	<sql id="allColumn">
+		#foreach($column in $tableInfo.fullColumn)$column.obj.name.toLowerCase()#if($velocityHasNext), #end#end
+		
+	</sql>
+	
+	<sql id="setCondition">
+	    #set($maxIndex = $tableInfo.otherColumn.size() - 1)
+<if test="fieldStrategy != null and fieldStrategy.toString() == 'IGNORE'.toString()">
+    #foreach($index in [0..$maxIndex])
+        #set($column = $tableInfo.otherColumn.get($!index))
+        $!column.obj.name.toLowerCase() = #{entity.$!column.name,jdbcType=$!column.ext.jdbcType},
+    #end
+    </if>
+
+        <if test="fieldStrategy == null or fieldStrategy.toString() == 'NOT_NULL'.toString()">
+        #foreach($index in [0..$maxIndex])
+            #set($column = $tableInfo.otherColumn.get($!index))
+    <if test="entity.$!column.name != null">
+                $!column.obj.name.toLowerCase() = #{entity.$!column.name,jdbcType=$!column.ext.jdbcType},
+            </if>
+        #end
+</if>
+    
+        <if test="fieldStrategy != null and fieldStrategy.toString() == 'NOT_EMPTY'.toString()">
+        #foreach($index in [0..$maxIndex])
+            #set($column = $tableInfo.otherColumn.get($!index))
+    <if test="entity.$!column.name != null#if($!column.type.equals("java.lang.String")) and entity.$!column.name != ''#end">
+                $!column.obj.name.toLowerCase() = #{entity.$!column.name,jdbcType=$!column.ext.jdbcType},
+            </if>
+        #end
+</if>
+	</sql>
+
+	<sql id="queryCondition">
+	    #set($maxIndex = $tableInfo.fullColumn.size() - 1)
+<if test="fieldStrategy != null and fieldStrategy.toString() == 'IGNORE'.toString()">
+    #foreach($index in [0..$maxIndex])
+        #set($column = $tableInfo.fullColumn.get($!index))
+        and $!column.obj.name.toLowerCase() = #{entity.$!column.name,jdbcType=$!column.ext.jdbcType}
+    #end
+    </if>
+
+        <if test="fieldStrategy == null or fieldStrategy.toString() == 'NOT_NULL'.toString()">
+        #foreach($index in [0..$maxIndex])
+            #set($column = $tableInfo.fullColumn.get($!index))
+    <if test="entity.$!column.name != null">
+                and $!column.obj.name.toLowerCase() = #{entity.$!column.name,jdbcType=$!column.ext.jdbcType}
+            </if>
+        #end
+</if>
+    
+        <if test="fieldStrategy != null and fieldStrategy.toString() == 'NOT_EMPTY'.toString()">
+        #foreach($index in [0..$maxIndex])
+            #set($column = $tableInfo.fullColumn.get($!index))
+    <if test="entity.$!column.name != null#if($!column.type.equals("java.lang.String")) and entity.$!column.name != ''#end">
+                and $!column.obj.name.toLowerCase() = #{entity.$!column.name,jdbcType=$!column.ext.jdbcType}
+            </if>
+        #end
+</if>
+	</sql>
+
+    <insert id="insert" keyProperty="$!pk.name" useGeneratedKeys="true">
+        insert into $!{tableName} 
+        <trim prefix="set" suffixOverrides=",">
+            $!pkName = #{entity.$!pk.name,jdbcType=$!pk.ext.jdbcType},
+            <include refid="setCondition"/>
+        </trim>
+    </insert>
+
+    <update id="updateById">
+        update $!{tableName} 
+        <trim prefix="set" suffixOverrides=",">
+            <include refid="setCondition"/>
+        </trim>
+        where $!pkName = #{entity.$!pk.name,jdbcType=$!pk.ext.jdbcType}
+    </update>
+    
+    <delete id ="deleteById">
+        delete from $!{tableName} where $!pkName = #{id,jdbcType=$!pk.ext.jdbcType}
+    </delete>
+    
+    <delete id ="deleteByEntity">
+        delete from $!{tableName} 
+        <trim prefix="where" prefixOverrides="and">
+            <include refid="queryCondition"/>
+        </trim>
+    </delete>
+
+    <select id ="queryByEntity" resultMap="$!{tableInfo.name}Map">
+        select <include refid="allColumn"/> from $!{tableName} 
+        <trim prefix="where" prefixOverrides="and">
+            <include refid="queryCondition"/>
+        </trim>
+    </select>
+
+    <select id ="queryById" resultMap="$!{tableInfo.name}Map">
+        select <include refid="allColumn"/> from $!{tableName} 
+        <trim prefix="where" prefixOverrides="and">
+            $!pkName = #{id,jdbcType=$!pk.ext.jdbcType}
+        </trim>
+    </select>
+    
+    <select id ="queryByIdList" resultMap="$!{tableInfo.name}Map">
+        select <include refid="allColumn"/> from $!{tableName} 
+        <trim prefix="where" prefixOverrides="and">
+            $!pkName in
+            <foreach collection="idList" open="(" close=")" item="id" separator=",">
+                #{id,jdbcType=$!pk.ext.jdbcType}
+            </foreach>
+        </trim>
+    </select>
+
+    <select id ="countByEntity" resultType="java.lang.Long">
+        select count(*) from $!{tableName} 
+        <trim prefix="where" prefixOverrides="and"> 
+            <include refid="queryCondition"/>
+        </trim>
+    </select>
+    
+</mapper>

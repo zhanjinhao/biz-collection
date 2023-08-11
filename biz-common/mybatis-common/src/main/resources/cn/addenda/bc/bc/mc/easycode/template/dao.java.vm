@@ -1,0 +1,75 @@
+##定义初始变量
+$!tableInfo.setName($tool.getClassName($tableInfo.obj.name.replaceFirst("t_","")))
+#set($tableName = $tool.append($tableInfo.name, "Mapper"))
+
+##设置回调
+$!callback.setFileName($tool.append($tableName, ".java"))
+$!callback.setSavePath($tool.append($modulePath, "/src/main/java/", $tableInfo.savePackageName.replace(".", "/"), "/mapper"))
+
+#if($tableInfo.savePackageName)package $!{tableInfo.savePackageName}.#{end}mapper;
+
+$!{autoimport.vm}
+import java.time.LocalDateTime;
+import org.apache.ibatis.annotations.Param;
+import java.util.List;
+
+##拿到主键
+#if(!$tableInfo.pkColumn.isEmpty())
+    #set($pk = $tableInfo.pkColumn.get(0))
+#end
+
+#set($pkName = $pk.obj.name.toLowerCase())
+
+/**
+ * $!{tableInfo.comment}($!{tableInfo.name})表数据库访问层
+ *
+ * @author addenda
+ * @since $!time.currTime()
+ */
+public interface $tableName {
+    /**
+     * 新增数据
+     */
+    @FieldStrategyController
+    int insert($!{tableInfo.name} $!tool.firstLowerCase($!{tableInfo.name}));
+
+    /**
+     * 按ID更新数据
+     */
+    @FieldStrategyController
+    int updateById($!{tableInfo.name} $!tool.firstLowerCase($!{tableInfo.name}));
+
+    /**
+     * 按ID删除数据
+     */
+    int deleteById(@Param("id") $pk.shortType id);
+
+    /**
+     * 按实体类删除数据
+     */
+    @FieldStrategyController
+    int deleteByEntity($!{tableInfo.name} $!tool.firstLowerCase($!{tableInfo.name}));
+
+    /**
+     * 按实体类查询数据
+     */
+    @FieldStrategyController
+    List<$!{tableInfo.name}> queryByEntity($!{tableInfo.name} $!tool.firstLowerCase($!{tableInfo.name}));
+
+    /**
+     * 按ID查询数据
+     */
+    $!{tableInfo.name} queryById(@Param("id") $pk.shortType id);
+
+    /**
+     * 按ID集合查询数据
+     */
+    List<$!{tableInfo.name}> queryByIdList(@Param("idList") List<$pk.shortType> idList);
+
+    /**
+     * 按实体类计数数据
+     */
+    @FieldStrategyController
+    List<Long> countByEntity($!{tableInfo.name} $!tool.firstLowerCase($!{tableInfo.name}));
+
+}

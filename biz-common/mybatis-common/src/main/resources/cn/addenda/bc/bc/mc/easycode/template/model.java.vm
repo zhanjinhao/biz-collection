@@ -1,0 +1,39 @@
+##引入宏定义
+$!{init.vm}
+$!{define.vm}
+
+$!tableInfo.setName($tool.getClassName($tableInfo.obj.name.replaceFirst("t_","")))
+
+##使用宏定义设置回调（保存位置与文件后缀）
+#save("/entity", ".java")
+
+##设置保存名称与保存位置
+$!callback.setFileName($tool.append($!{tableInfo.name}, ".java"))
+$!callback.setSavePath($tool.append($modulePath, "/src/main/java/", $tableInfo.savePackageName.replace(".", "/"), "/entity"))
+
+#if($tableInfo.savePackageName)package $!{tableInfo.savePackageName}.#{end}model;
+
+$!{autoimport.vm}
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import java.util.List;
+
+##使用宏定义实现类注释信息
+#tableComment("实体类")
+@Setter
+@Getter
+@ToString
+public class $!{tableInfo.name} extends BaseEntity implements Serializable {
+    private static final long serialVersionUID = $!tool.serial();
+#foreach($column in $tableInfo.fullColumn)
+    #if(${column.comment})/**
+     * ${column.comment}
+     */#end
+
+    private $!{tool.getClsNameByFullName($column.type)} $!{column.name};
+#end
+
+}

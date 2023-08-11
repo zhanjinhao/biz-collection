@@ -1,0 +1,1292 @@
+{
+	"info": {
+		"_postman_id": "ed255713-0514-415e-97c5-91663ca6d5a8",
+		"name": "biz-rbac",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "USER-插入",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"userId\": \"127\",\r\n    \"userName\": \"addenda\",\r\n    \"userEmail\": \"127@163.com\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/user/insert",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"user",
+						"insert"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "USER-分页查询",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{}"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/user/pageQuery?pageNum=1&pageSize=2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"user",
+						"pageQuery"
+					],
+					"query": [
+						{
+							"key": "pageNum",
+							"value": "1"
+						},
+						{
+							"key": "pageSize",
+							"value": "2"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "USER-根据SQC查询",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"url": {
+					"raw": "http://localhost:21881/rbac/user/queryBySqc?sqc=1270165421254000",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"user",
+						"queryBySqc"
+					],
+					"query": [
+						{
+							"key": "sqc",
+							"value": "1270165421254000"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "USER-修改",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"sqc\": \"1111768361849100\",\r\n    \"userName\": \"addenda1\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/user/update?sqc=1270165421254000",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"user",
+						"update"
+					],
+					"query": [
+						{
+							"key": "sqc",
+							"value": "1270165421254000"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "USER-设置状态",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "L"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/user/setStatus?sqc=895457583681265664",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"user",
+						"setStatus"
+					],
+					"query": [
+						{
+							"key": "sqc",
+							"value": "895457583681265664"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "USER-删除",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "895457583681265664"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/user/deleteBySqc",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"user",
+						"deleteBySqc"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ROLE-插入",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"roleCode\": \"qingbao1\",\r\n    \"roleName\": \"情报1\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/role/insert",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"role",
+						"insert"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ROLE-删除",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "896113107250765824"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/role/deleteBySqc",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"role",
+						"deleteBySqc"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ROLE-修改",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"roleName\": \"签派2\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/role/update?sqc=1602307569577900",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"role",
+						"update"
+					],
+					"query": [
+						{
+							"key": "sqc",
+							"value": "1602307569577900"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ROLE-设置状态",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "A"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/role/setStatus?sqc=1602307569577900",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"role",
+						"setStatus"
+					],
+					"query": [
+						{
+							"key": "sqc",
+							"value": "1602307569577900"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ROLE-根据SQC查询",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "D"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/role/queryBySqc?sqc=1602307569577900",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"role",
+						"queryBySqc"
+					],
+					"query": [
+						{
+							"key": "sqc",
+							"value": "1602307569577900"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ROLE-分页查询",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{}"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/role/pageQuery?pageNum=1&pageSize=2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"role",
+						"pageQuery"
+					],
+					"query": [
+						{
+							"key": "pageNum",
+							"value": "1"
+						},
+						{
+							"key": "pageSize",
+							"value": "2"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "MODULE-根节点SQC",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:21881/rbac/module/rootSqc",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"module",
+						"rootSqc"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "MODULE-插入",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"moduleCode\": \"hangbantiaozheng1\",\r\n  \"moduleName\": \"航班调整1\",\r\n  \"parentSqc\": 0,\r\n  \"action\": \"/hangbantiaozheng\",\r\n  \"accessType\": \"R\",\r\n  \"showType\": \"N\",\r\n  \"responseToType\": \"C\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/module/insert",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"module",
+						"insert"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "MODULE-删除",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "300308488740200"
+				},
+				"url": {
+					"raw": "http://localhost:21881/piparbac/module/deleteBySqc",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"piparbac",
+						"module",
+						"deleteBySqc"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "MODULE-修改",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"sqc\": 300308488740200,\r\n  \"moduleName\": \"航班调整\",\r\n  \"action\": \"/hangbantiaozheng\",\r\n  \"accessType\": \"R\",\r\n  \"showType\": \"N\",\r\n  \"responseToType\": \"C\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/module/update?sqc=896115559693873152",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"module",
+						"update"
+					],
+					"query": [
+						{
+							"key": "sqc",
+							"value": "896115559693873152"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "MODULE-设置状态",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "A"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/module/setStatus?sqc=896115559693873152",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"module",
+						"setStatus"
+					],
+					"query": [
+						{
+							"key": "sqc",
+							"value": "896115559693873152"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "MODULE-根据SQC查询",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:21881/rbac/module/queryBySqc?sqc=896115559693873152",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"module",
+						"queryBySqc"
+					],
+					"query": [
+						{
+							"key": "sqc",
+							"value": "896115559693873152"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "MODULE-分页查询",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"moduleName\": \"\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/module/pageQuery?pageNum=1&pageSize=2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"module",
+						"pageQuery"
+					],
+					"query": [
+						{
+							"key": "pageNum",
+							"value": "1"
+						},
+						{
+							"key": "pageSize",
+							"value": "2"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UR-保存用户的角色",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[1602307569577900]"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/userRole/save?userSqc=1270165421254000",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"userRole",
+						"save"
+					],
+					"query": [
+						{
+							"key": "userSqc",
+							"value": "1270165421254000"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UR-设置权限",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"accessType\": \"W\",\r\n    \"ruleSqcList\": \"1603203888903300\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/userRole/setPermission?sqc=1603390031534800",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"userRole",
+						"setPermission"
+					],
+					"query": [
+						{
+							"key": "sqc",
+							"value": "1603390031534800"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UR-查询用户的角色",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:21881/rbac/userRole/queryRoleOfUser?userSqc=1270165421254000",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"userRole",
+						"queryRoleOfUser"
+					],
+					"query": [
+						{
+							"key": "userSqc",
+							"value": "1270165421254000"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UR-查询角色下的用户",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:21881/rbac/userRole/queryUserOnRole?roleSqc=1602307569577900",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"userRole",
+						"queryUserOnRole"
+					],
+					"query": [
+						{
+							"key": "roleSqc",
+							"value": "1602307569577900"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "URR-登录",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"userSqc\": 1270165421254000,\r\n    \"roleSqc\": 1602307569577900\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/userRoleRecord/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"userRoleRecord",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "URR-退出",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"userSqc\": 497925032261700,\r\n    \"roleSqc\": 498018410984700\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/userRoleRecord/exit?userSqc=1270165421254000",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"userRoleRecord",
+						"exit"
+					],
+					"query": [
+						{
+							"key": "userSqc",
+							"value": "1270165421254000"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "URR-查询登录角色",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"userSqc\": 497925032261700,\r\n    \"roleSqc\": 498018410984700\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/userRoleRecord/queryLoginRole?userSqc=1270165421254000",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"userRoleRecord",
+						"queryLoginRole"
+					],
+					"query": [
+						{
+							"key": "userSqc",
+							"value": "1270165421254000"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RM-查询角色的模块",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:21881/rbac/roleModule/queryModuleOfRole?roleSqc=1602307569577900&accessType=R",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"roleModule",
+						"queryModuleOfRole"
+					],
+					"query": [
+						{
+							"key": "roleSqc",
+							"value": "1602307569577900"
+						},
+						{
+							"key": "accessType",
+							"value": "R"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RM-保存角色的模块",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[0, 300308488740200]"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/roleModule/save?roleSqc=1602307569577900",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"roleModule",
+						"save"
+					],
+					"query": [
+						{
+							"key": "roleSqc",
+							"value": "1602307569577900"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RM-查询模块下的角色",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[0, 300308488740200]"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/roleModule/queryRoleOnModule?moduleSqc=0",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"roleModule",
+						"queryRoleOnModule"
+					],
+					"query": [
+						{
+							"key": "moduleSqc",
+							"value": "0"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RULE-插入",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"ruleCode\": \"wanggui_flight\",\r\n    \"ruleName\": \"网规航班\",\r\n    \"tableName\": \"t_flight\",\r\n    \"condition\": \"creator = 'addenda'\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/rule/insert",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"rule",
+						"insert"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RULE-删除",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "473821544279100"
+				},
+				"url": {
+					"raw": "http://localhost:21881/piparbac/rule/deleteBySqc",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"piparbac",
+						"rule",
+						"deleteBySqc"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RULE-修改",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"ruleName\": \"网规航班\",\r\n    \"tableName\": \"t_flight\",\r\n    \"condition\": \"owner = '网规'\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/rule/update?sqc=1603203888903300",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"rule",
+						"update"
+					],
+					"query": [
+						{
+							"key": "sqc",
+							"value": "1603203888903300"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RULE-设置状态",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "A"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/rule/setStatus?sqc=1603203888903300",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"rule",
+						"setStatus"
+					],
+					"query": [
+						{
+							"key": "sqc",
+							"value": "1603203888903300"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RULE-根据SQC查询",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"url": {
+					"raw": "http://localhost:21881/rbac/rule/queryBySqc?sqc=1603203888903300",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"rule",
+						"queryBySqc"
+					],
+					"query": [
+						{
+							"key": "sqc",
+							"value": "1603203888903300"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RULE-分页查询",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{}"
+				},
+				"url": {
+					"raw": "http://localhost:21881/rbac/rule/pageQuery?pageNum=1&pageSize=2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"rule",
+						"pageQuery"
+					],
+					"query": [
+						{
+							"key": "pageNum",
+							"value": "1"
+						},
+						{
+							"key": "pageSize",
+							"value": "2"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RULE-查询规则下的用户角色",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:21881/rbac/rule/queryUserRoleOnRule?ruleSqc=1603203888903300",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "21881",
+					"path": [
+						"rbac",
+						"rule",
+						"queryUserRoleOnRule"
+					],
+					"query": [
+						{
+							"key": "ruleSqc",
+							"value": "1603203888903300"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
