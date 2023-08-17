@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 @RestControllerAdvice(basePackages = "cn.addenda.bc.rbac.controller")
 @Slf4j
@@ -17,8 +18,10 @@ public class GlobalExceptionHandler {
     private static final String MSG = "url：[{}]，异常信息：[{}]。";
 
     @ExceptionHandler(SystemException.class)
-    public Object handleException(SystemException ex, HttpServletRequest request) {
+    public Object handleException(SystemException ex, HttpServletRequest request, HttpServletResponse response) {
         log.error(MSG, request.getRequestURI(), ex.getMessage(), ex);
+
+        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
         ControllerResult<String> objectControllerResult = new ControllerResult<>();
         objectControllerResult.setReqStatus(Status.SYSTEM_EXCEPTION);
@@ -39,8 +42,10 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public Object handleException(Exception ex, HttpServletRequest request) {
+    public Object handleException(Exception ex, HttpServletRequest request, HttpServletResponse response) {
         log.error(MSG, request.getRequestURI(), ex.getMessage(), ex);
+
+        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
         ControllerResult<String> objectControllerResult = new ControllerResult<>();
         objectControllerResult.setReqStatus(Status.SYSTEM_EXCEPTION);

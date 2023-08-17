@@ -18,6 +18,7 @@
         <module>spring-common</module>
         <module>redis-common</module>
         <module>biz-common-all</module>
+        <module>user-common</module>
     </modules>
 
     <properties>

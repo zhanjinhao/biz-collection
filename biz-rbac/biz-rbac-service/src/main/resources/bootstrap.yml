@@ -9,18 +9,18 @@ spring:
       password: ${nacosPassword}
       discovery:
         namespace: ${nacosNamespace}
-        group: rbac
+        group: biz-collection
       config:
         file-extension: yaml
         extension-configs:
-          - data-id: jdbc.yaml
+          - data-id: rbac-jdbc.yaml
             refresh: true
-            group: rbac
-          - data-id: redis.yaml
+            group: biz-collection
+          - data-id: rbac-redis.yaml
             refresh: true
-            group: rbac
-        group: rbac
-        namespace: dev
+            group: biz-collection
+        group: biz-collection
+        namespace: ${nacosNamespace}
         enabled: true
         refresh-enabled: true
   config:

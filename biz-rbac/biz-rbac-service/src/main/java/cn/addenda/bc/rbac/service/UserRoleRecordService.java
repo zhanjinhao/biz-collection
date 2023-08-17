@@ -1,5 +1,6 @@
 package cn.addenda.bc.rbac.service;
 
+import cn.addenda.bc.bc.uc.user.UserInfoDTO;
 import cn.addenda.bc.rbac.pojo.entity.UserRole;
 import cn.addenda.bc.rbac.pojo.entity.UserRoleRecord;
 
@@ -9,7 +10,7 @@ import cn.addenda.bc.rbac.pojo.entity.UserRoleRecord;
  */
 public interface UserRoleRecordService {
 
-    Long login(UserRoleRecord userRoleRecord);
+    UserInfoDTO login(UserRoleRecord userRoleRecord);
 
     Boolean exit(Long userSqc);
 

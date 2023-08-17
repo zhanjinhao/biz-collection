@@ -1,0 +1,54 @@
+server:
+  port: 21880
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    # gateway的配置
+    gateway:
+      # 路由规则
+      routes:
+        - id: rbac-service
+          uri: lb://rbac-service   # todo lb: 负载均衡策略是什么
+          predicates:
+            - Path=/rbac/**
+          filters:
+            - name: TokenIssue
+              args:
+                pathList:
+                  - /rbac/userRoleRecord/login
+            - name: TokenValidate
+              args:
+                mode: WHITE
+                pathPreList:
+                  - /rbac/userRoleRecord/login
+            - name: TokenCancel
+              args:
+                pathList:
+                  - /rbac/userRoleRecord/exit
+                  - /rbac/user/deleteBySqc
+
+    # 配置Nacos
+    nacos:
+      server-addr: ${nacosServer}:${nacosPort}
+      username: ${nacosUserName}
+      password: ${nacosPassword}
+      discovery:
+        namespace: ${nacosNamespace}
+        group: biz-collection
+      config:
+        file-extension: yaml
+        extension-configs:
+          - data-id: gateway-jdbc.yaml
+            refresh: true
+            group: biz-collection
+          - data-id: gateway-redis.yaml
+            refresh: true
+            group: biz-collection
+        group: biz-collection
+        namespace: ${nacosNamespace}
+        enabled: true
+        refresh-enabled: true
+  config:
+    import:
+      - nacos:gateway-service.yaml?refresh=true

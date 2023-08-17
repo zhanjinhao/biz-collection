@@ -1,5 +1,6 @@
 package cn.addenda.bc.rbac.config;
 
+import cn.addenda.bc.bc.uc.baseentity.UserContextBaseEntitySource;
 import cn.addenda.footprints.client.spring.aop.baseentity.BaseEntityRewriterConfigurer;
 import cn.addenda.footprints.client.spring.aop.baseentity.EnableBaseEntity;
 import cn.addenda.footprints.client.spring.aop.dynamicsql.DataConvertorRegistryConfigurer;
@@ -42,7 +43,7 @@ public class FootprintsConfig {
 
     @Bean
     public BaseEntityRewriterConfigurer baseEntityRewriterConfigurer() {
-        return new BaseEntityRewriterConfigurer();
+        return new BaseEntityRewriterConfigurer(new UserContextBaseEntitySource());
     }
 
     @Bean

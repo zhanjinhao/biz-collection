@@ -3,6 +3,7 @@ package cn.addenda.bc.rbac.controller;
 import cn.addenda.bc.bc.jc.util.AssertUtils;
 import cn.addenda.bc.bc.jc.util.BeanUtil;
 import cn.addenda.bc.bc.sc.result.ControllerResult;
+import cn.addenda.bc.bc.uc.user.UserInfoDTO;
 import cn.addenda.bc.rbac.pojo.entity.UserRole;
 import cn.addenda.bc.rbac.pojo.entity.UserRoleRecord;
 import cn.addenda.bc.rbac.pojo.vo.VUserRoleRecord;
@@ -22,7 +23,7 @@ public class UserRoleRecordController {
     private UserRoleRecordService userRoleRecordService;
 
     @PostMapping("/login")
-    public ControllerResult<Long> login(@RequestBody VUserRoleRecord userRoleRecord) {
+    public ControllerResult<UserInfoDTO> login(@RequestBody VUserRoleRecord userRoleRecord) {
         AssertUtils.notNull(userRoleRecord);
         AssertUtils.notNull(userRoleRecord.getUserSqc(), "userSqc");
         AssertUtils.notNull(userRoleRecord.getRoleSqc(), "roleSqc");

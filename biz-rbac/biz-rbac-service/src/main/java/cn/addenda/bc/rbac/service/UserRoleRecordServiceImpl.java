@@ -5,10 +5,13 @@ import cn.addenda.bc.bc.jc.util.IterableUtils;
 import cn.addenda.bc.bc.sc.lock.LockHelper;
 import cn.addenda.bc.bc.sc.transaction.TransactionAttrBuilder;
 import cn.addenda.bc.bc.sc.transaction.TransactionHelper;
+import cn.addenda.bc.bc.uc.user.UserContext;
+import cn.addenda.bc.bc.uc.user.UserInfoDTO;
 import cn.addenda.bc.rbac.manager.RoleManager;
 import cn.addenda.bc.rbac.manager.UserManager;
 import cn.addenda.bc.rbac.manager.UserRoleManager;
 import cn.addenda.bc.rbac.manager.UserRoleRecordManager;
+import cn.addenda.bc.rbac.pojo.entity.User;
 import cn.addenda.bc.rbac.pojo.entity.UserRole;
 import cn.addenda.bc.rbac.pojo.entity.UserRoleRecord;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,15 +43,17 @@ public class UserRoleRecordServiceImpl implements UserRoleRecordService {
 
     @Autowired
     private LockHelper lockHelper;
+
     @Autowired
     private TransactionHelper transactionHelper;
 
     @Override
-    public Long login(UserRoleRecord userRoleRecord) {
+    public UserInfoDTO login(UserRoleRecord userRoleRecord) {
         Long userSqc = userRoleRecord.getUserSqc();
         Long roleSqc = userRoleRecord.getRoleSqc();
 
-        if (!userManager.sqcExists(userSqc)) {
+        User user = userManager.queryBySqc(userSqc);
+        if (user == null) {
             throw new ServiceException("userSqc不存在：" + userSqc + "。");
         }
         if (!roleManager.sqcExists(roleSqc)) {
@@ -68,19 +73,27 @@ public class UserRoleRecordServiceImpl implements UserRoleRecordService {
                 // 查询出来用户现有的角色
                 UserRoleRecord userRoleRecordFromDb = userRoleRecordManager.queryUserRoleRecordByUserSqc(userSqc);
 
-                // 如果不存在，表示登录
-                if (userRoleRecordFromDb == null) {
-                    userRoleRecord.setType(UserRoleRecord.TYPE_ENTER);
-                    userRoleRecordManager.insert(userRoleRecord);
-                }
-                // 如果存在，表示转换角色
-                else {
-                    userRoleRecordManager.deleteByUserSqc(userSqc);
-                    userRoleRecord.setType(UserRoleRecord.TYPE_CHANGE_ROLE);
-                    userRoleRecordManager.insert(userRoleRecord);
-                }
+                UserInfoDTO build = UserInfoDTO.builder()
+                        .userId(user.getUserId())
+                        .username(user.getUserName())
+                        .build();
 
-                return userRoleRecord.getSqc();
+                UserContext.runWithCustomUser(() -> {
+                    // 如果不存在，表示登录
+                    if (userRoleRecordFromDb == null) {
+                        userRoleRecord.setType(UserRoleRecord.TYPE_ENTER);
+                        userRoleRecordManager.insert(userRoleRecord);
+                    }
+                    // 如果存在，表示转换角色
+                    else {
+                        userRoleRecordManager.deleteByUserSqc(userSqc);
+                        userRoleRecord.setType(UserRoleRecord.TYPE_CHANGE_ROLE);
+                        userRoleRecordManager.insert(userRoleRecord);
+                    }
+
+                }, build);
+
+                return build;
             });
         }, userSqc);
     }

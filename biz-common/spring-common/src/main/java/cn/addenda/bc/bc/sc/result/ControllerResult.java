@@ -1,5 +1,6 @@
 package cn.addenda.bc.bc.sc.result;
 
+import cn.addenda.bc.bc.SystemException;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -30,7 +31,13 @@ public class ControllerResult<T> implements Serializable {
      */
     private Status reqStatus = Status.SYSTEM_EXCEPTION;
     /**
-     * 请求失败代码
+     * 请求失败代码。<br/>
+     * <ul>
+     * <li>已知系统异常由{@link SystemException#getErrorCode()}确定</li>
+     * <li>未知系统异常是-1</li>
+     * <li>业务异常是999999</li>
+     * <li>网关异常是-2</li>
+     * </ul>
      */
     private Integer reqFailedCode;
     /**
