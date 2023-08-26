@@ -15,20 +15,20 @@ import java.util.function.Supplier;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class UserContext {
 
-    private static final ThreadLocal<Stack<UserInfoDTO>> USER_THREAD_LOCAL = new TransmittableThreadLocal<>();
+    private static final ThreadLocal<Stack<UserInfo>> USER_THREAD_LOCAL = new TransmittableThreadLocal<>();
 
     /**
      * 设置用户至上下文
      *
      * @param user 用户详情信息
      */
-    public static void setUser(UserInfoDTO user) {
-        Stack<UserInfoDTO> userInfoDTOS = USER_THREAD_LOCAL.get();
-        if (userInfoDTOS == null) {
-            userInfoDTOS = new Stack<>();
-            USER_THREAD_LOCAL.set(userInfoDTOS);
+    public static void setUser(UserInfo user) {
+        Stack<UserInfo> userInfos = USER_THREAD_LOCAL.get();
+        if (userInfos == null) {
+            userInfos = new Stack<>();
+            USER_THREAD_LOCAL.set(userInfos);
         }
-        userInfoDTOS.push(user);
+        userInfos.push(user);
     }
 
     /**
@@ -37,8 +37,8 @@ public final class UserContext {
      * @return 用户 ID
      */
     public static String getUserId() {
-        Stack<UserInfoDTO> userInfoDTOS = USER_THREAD_LOCAL.get();
-        return userInfoDTOS.peek().getUserId();
+        Stack<UserInfo> userInfos = USER_THREAD_LOCAL.get();
+        return userInfos.peek().getUserId();
     }
 
     /**
@@ -47,26 +47,34 @@ public final class UserContext {
      * @return 用户名称
      */
     public static String getUsername() {
-        Stack<UserInfoDTO> userInfoDTOS = USER_THREAD_LOCAL.get();
-        return userInfoDTOS.peek().getUsername();
+        Stack<UserInfo> userInfos = USER_THREAD_LOCAL.get();
+        return userInfos.peek().getUsername();
+    }
+
+    /**
+     * 获取user
+     */
+    public static UserInfo getUser() {
+        Stack<UserInfo> userInfos = USER_THREAD_LOCAL.get();
+        return userInfos.peek();
     }
 
     /**
      * 清理用户上下文
      */
     public static void removeUser() {
-        Stack<UserInfoDTO> userInfoDTOS = USER_THREAD_LOCAL.get();
-        if (userInfoDTOS == null) {
+        Stack<UserInfo> userInfos = USER_THREAD_LOCAL.get();
+        if (userInfos == null) {
             return;
         }
-        userInfoDTOS.pop();
-        if (userInfoDTOS.isEmpty()) {
+        userInfos.pop();
+        if (userInfos.isEmpty()) {
             USER_THREAD_LOCAL.remove();
         }
     }
 
-    public static <T> void acceptWithCustomUser(Consumer<T> consumer, T t, UserInfoDTO userInfoDTO) {
-        UserContext.setUser(userInfoDTO);
+    public static <T> void acceptWithCustomUser(Consumer<T> consumer, T t, UserInfo userInfo) {
+        UserContext.setUser(userInfo);
         try {
             consumer.accept(t);
         } finally {
@@ -74,8 +82,8 @@ public final class UserContext {
         }
     }
 
-    public static <T, R> R applyWithCustomUser(Function<T, R> function, T t, UserInfoDTO userInfoDTO) {
-        UserContext.setUser(userInfoDTO);
+    public static <T, R> R applyWithCustomUser(Function<T, R> function, T t, UserInfo userInfo) {
+        UserContext.setUser(userInfo);
         try {
             return function.apply(t);
         } finally {
@@ -83,8 +91,8 @@ public final class UserContext {
         }
     }
 
-    public static void runWithCustomUser(Runnable runnable, UserInfoDTO userInfoDTO) {
-        UserContext.setUser(userInfoDTO);
+    public static void runWithCustomUser(Runnable runnable, UserInfo userInfo) {
+        UserContext.setUser(userInfo);
         try {
             runnable.run();
         } finally {
@@ -92,8 +100,8 @@ public final class UserContext {
         }
     }
 
-    public static <R> R getWithCustomUser(Supplier<R> supplier, UserInfoDTO userInfoDTO) {
-        UserContext.setUser(userInfoDTO);
+    public static <R> R getWithCustomUser(Supplier<R> supplier, UserInfo userInfo) {
+        UserContext.setUser(userInfo);
         try {
             return supplier.get();
         } finally {

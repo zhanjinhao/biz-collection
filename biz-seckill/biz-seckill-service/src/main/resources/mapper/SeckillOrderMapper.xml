@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.addenda.bc.seckill.mapper.SeckillOrderMapper">
+    <resultMap id="tSeckillOrderRm" type="cn.addenda.bc.seckill.po.SeckillOrder">
+        <id property="id" column="id"/>
+    </resultMap>
+
+    <sql id="allFields">
+        id, user_id, seckill_goods_id
+    </sql>
+
+    <insert id="insert">
+        insert into t_seckill_order
+        set user_id          = #{userId,jdbcType=VARCHAR},
+            seckill_goods_id = #{seckillGoodsId,jdbcType=BIGINT}
+    </insert>
+
+    <select id="exists" resultType="java.lang.Integer">
+        select 1
+        from t_seckill_order
+        where seckill_goods_id = #{seckillGoodsId,jdbcType=BIGINT}
+          and user_id = #{userId,jdbcType=VARCHAR}
+        limit 1
+    </select>
+
+    <delete id="deleteBySeckillGoodsId">
+        delete
+        from t_seckill_order
+        where seckill_goods_id = #{seckillGoodsId,jdbcType=BIGINT}
+    </delete>
+</mapper>

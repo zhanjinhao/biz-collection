@@ -1,6 +1,5 @@
 package cn.addenda.bc.gateway.exception;
 
-import cn.addenda.bc.bc.ServiceException;
 import cn.addenda.bc.bc.sc.result.Status;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
 import org.springframework.boot.web.reactive.error.ErrorAttributes;
@@ -16,9 +15,7 @@ import org.springframework.web.server.ServerWebExchange;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * @author addenda
@@ -31,29 +28,56 @@ public class ControllerResultErrorAttributes implements ErrorAttributes {
     @Override
     public Map<String, Object> getErrorAttributes(ServerRequest request, ErrorAttributeOptions options) {
         Map<String, Object> errorAttributes = getErrorAttributes(request, options.isIncluded(ErrorAttributeOptions.Include.STACK_TRACE));
-        if (!options.isIncluded(ErrorAttributeOptions.Include.EXCEPTION)) {
-            errorAttributes.remove("exception");
+
+        StringBuilder reqAttachment = new StringBuilder();
+
+        Map<String, Object> controllerResultAttributes = new HashMap<>();
+        controllerResultAttributes.put("ts", ((Date) errorAttributes.get("timestamp")).getTime());
+        // todo reqId应该从链路追踪里面来
+        controllerResultAttributes.put("reqId", errorAttributes.get("requestId"));
+        controllerResultAttributes.put("version", null);
+        controllerResultAttributes.put("result", null);
+        controllerResultAttributes.put("reqStatus", Status.SYSTEM_EXCEPTION);
+        controllerResultAttributes.put("reqFailedCode", -999999);
+
+        reqAttachment.append(errorAttributes.get("path")).append(".");
+        reqAttachment.append(" Error:[").append(errorAttributes.get("error")).append("].");
+        if (options.isIncluded(ErrorAttributeOptions.Include.EXCEPTION)) {
+            Object exception = errorAttributes.remove("exception");
+            if (exception != null &&
+                (exception instanceof CharSequence && StringUtils.hasLength((CharSequence) exception))) {
+                reqAttachment.append(" Exception:[").append(exception).append("].");
+            }
         }
-        if (!options.isIncluded(ErrorAttributeOptions.Include.STACK_TRACE)) {
-            errorAttributes.remove("trace");
+        if (options.isIncluded(ErrorAttributeOptions.Include.MESSAGE)) {
+            Object message = errorAttributes.remove("message");
+            if (message != null &&
+                (message instanceof CharSequence && StringUtils.hasLength((CharSequence) message))) {
+                reqAttachment.append(" Message:[").append(message).append("].");
+            }
         }
-        if (!options.isIncluded(ErrorAttributeOptions.Include.BINDING_ERRORS)) {
-            errorAttributes.remove("errors");
+        if (options.isIncluded(ErrorAttributeOptions.Include.STACK_TRACE)) {
+            Object trace = errorAttributes.remove("trace");
+            if (trace != null &&
+                (trace instanceof CharSequence && StringUtils.hasLength((CharSequence) trace))) {
+                reqAttachment.append(" Trace:[").append(trace).append("].");
+            }
         }
-        return errorAttributes;
+        if (options.isIncluded(ErrorAttributeOptions.Include.BINDING_ERRORS)) {
+            Object errors = errorAttributes.remove("errors");
+            if (errors != null &&
+                (errors instanceof CharSequence && StringUtils.hasLength((CharSequence) errors))) {
+                reqAttachment.append(" Errors:[").append(errors).append("].");
+            }
+        }
+
+        controllerResultAttributes.put("reqAttachment", reqAttachment.toString());
+        return controllerResultAttributes;
     }
 
     private Map<String, Object> getErrorAttributes(ServerRequest request, boolean includeStackTrace) {
         Map<String, Object> errorAttributes = new LinkedHashMap<>();
-
-        errorAttributes.put("reqId", null);
-        errorAttributes.put("version", null);
-        errorAttributes.put("ts", System.currentTimeMillis());
-        errorAttributes.put("result", null);
-        errorAttributes.put("reqStatus", Status.SYSTEM_EXCEPTION);
-        errorAttributes.put("reqFailedCode", -2);
-        errorAttributes.put("reqAttachment", "系统异常，请联系IT处理！");
-
+        errorAttributes.put("timestamp", new Date());
         errorAttributes.put("path", request.path());
         Throwable error = getError(request);
         MergedAnnotation<ResponseStatus> responseStatusAnnotation = MergedAnnotations
@@ -62,6 +86,7 @@ public class ControllerResultErrorAttributes implements ErrorAttributes {
         errorAttributes.put("status", errorStatus.value());
         errorAttributes.put("error", errorStatus.getReasonPhrase());
         errorAttributes.put("message", determineMessage(error, responseStatusAnnotation));
+        errorAttributes.put("requestId", request.exchange().getRequest().getId());
         handleException(errorAttributes, determineException(error), includeStackTrace);
         return errorAttributes;
     }
@@ -79,9 +104,6 @@ public class ControllerResultErrorAttributes implements ErrorAttributes {
         }
         if (error instanceof ResponseStatusException) {
             return ((ResponseStatusException) error).getReason();
-        }
-        if (error instanceof ServiceException) {
-            return ((ServiceException) error).getMessage();
         }
         String reason = responseStatusAnnotation.getValue("reason", String.class).orElse("");
         if (StringUtils.hasText(reason)) {

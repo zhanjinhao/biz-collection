@@ -2,7 +2,7 @@ package cn.addenda.bc.gateway.util;
 
 import cn.addenda.bc.bc.jc.util.JacksonUtils;
 import cn.addenda.bc.bc.uc.user.UserConstant;
-import cn.addenda.bc.bc.uc.user.UserInfoDTO;
+import cn.addenda.bc.bc.uc.user.UserInfo;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -36,7 +36,7 @@ public final class JWTUtils {
      * @param userInfo 用户信息
      * @return 用户访问 Token
      */
-    public static String generateToken(UserInfoDTO userInfo) {
+    public static String generateToken(UserInfo userInfo) {
         Map<String, Object> customerUserMap = new HashMap<>();
         customerUserMap.put(UserConstant.USER_ID_KEY, userInfo.getUserId());
         customerUserMap.put(UserConstant.USER_NAME_KEY, userInfo.getUsername());
@@ -56,7 +56,7 @@ public final class JWTUtils {
      * @param jwtToken 用户访问 Token
      * @return 用户信息
      */
-    public static UserInfoDTO parseToken(String jwtToken) {
+    public static UserInfo parseToken(String jwtToken) {
         if (StringUtils.hasText(jwtToken)) {
             String actualJwtToken = jwtToken.replace(TOKEN_PREFIX, "");
             try {
@@ -64,7 +64,7 @@ public final class JWTUtils {
                 Date expiration = claims.getExpiration();
                 if (expiration.after(new Date())) {
                     String subject = claims.getSubject();
-                    return JacksonUtils.stringToObject(subject, UserInfoDTO.class);
+                    return JacksonUtils.stringToObject(subject, UserInfo.class);
                 }
             } catch (ExpiredJwtException ignored) {
             } catch (Exception ex) {

@@ -11,7 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserInfoDTO {
+public class UserInfo {
 
     /**
      * 用户 ID

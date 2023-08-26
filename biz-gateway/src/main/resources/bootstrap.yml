@@ -1,5 +1,10 @@
 server:
   port: 21880
+  error:
+    include-exception: true
+    include-binding-errors: always
+    include-message: always
+    include-stacktrace: never
 spring:
   application:
     name: gateway-service
@@ -27,7 +32,15 @@ spring:
                 pathList:
                   - /rbac/userRoleRecord/exit
                   - /rbac/user/deleteBySqc
-
+        - id: seckill-service
+          uri: lb://seckill-service
+          predicates:
+            - Path=/seckill/**
+          filters:
+            - name: TokenValidate
+              args:
+                mode: WHITE
+                pathPreList:
     # 配置Nacos
     nacos:
       server-addr: ${nacosServer}:${nacosPort}

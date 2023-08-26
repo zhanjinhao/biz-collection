@@ -135,12 +135,12 @@ public class CacheHelper {
 
     protected ExecutorService defaultCacheBuildEs() {
         return new ThreadPoolExecutor(
-                2,
-                2,
-                30,
-                TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(10),
-                new SimpleNamedThreadFactory("CacheHelper-Rebuild"));
+            2,
+            2,
+            30,
+            TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(10),
+            new SimpleNamedThreadFactory("CacheHelper-Rebuild"));
     }
 
     public <I> void acceptWithPpf(String keyPrefix, I id, Consumer<I> consumer) {
@@ -189,7 +189,7 @@ public class CacheHelper {
      * @param <I>       键值类型
      */
     public <R, I> R queryWithPpf(
-            String keyPrefix, I id, Class<R> rType, Function<I, R> rtQuery, Long ttl) {
+        String keyPrefix, I id, Class<R> rType, Function<I, R> rtQuery, Long ttl) {
         TypeReference<R> typeReference = new TypeReference<R>() {
             @Override
             public Type getType() {
@@ -211,7 +211,7 @@ public class CacheHelper {
      * @param <I>       键值类型
      */
     public <R, I> R queryWithPpf(
-            String keyPrefix, I id, TypeReference<R> rType, Function<I, R> rtQuery, Long ttl) {
+        String keyPrefix, I id, TypeReference<R> rType, Function<I, R> rtQuery, Long ttl) {
         String key = keyPrefix + PERFORMANCE_FIRST_PREFIX + id;
         // 1 查询缓存
         String cachedJson = kvCache.get(key);
@@ -279,7 +279,7 @@ public class CacheHelper {
                     // 如果过期了，输出告警信息。
                     // 使用限流器防止高并发下大量打印日志。
                     RequestIntervalTrafficLimiter trafficLimiter = trafficLimiterMap.computeIfAbsent(
-                            keyPrefix + PERFORMANCE_FIRST_PREFIX, s -> new RequestIntervalTrafficLimiter(ppfExpirationDetectionInterval));
+                        keyPrefix + PERFORMANCE_FIRST_PREFIX, s -> new RequestIntervalTrafficLimiter(ppfExpirationDetectionInterval));
                     if (trafficLimiter.acquire()) {
                         log.error(EXPIRED_MSG, key, data);
                     }
@@ -348,7 +348,7 @@ public class CacheHelper {
      * @param <I>       键值类型
      */
     public <R, I> R queryWithRdf(
-            String keyPrefix, I id, TypeReference<R> rType, Function<I, R> rtQuery, Long ttl) {
+        String keyPrefix, I id, TypeReference<R> rType, Function<I, R> rtQuery, Long ttl) {
         return queryWithRdf(keyPrefix, id, rType, rtQuery, ttl, true);
     }
 
@@ -364,7 +364,7 @@ public class CacheHelper {
      * @param <I>       键值类型
      */
     public <R, I> R queryWithRdf(
-            String keyPrefix, I id, Class<R> rType, Function<I, R> rtQuery, Long ttl) {
+        String keyPrefix, I id, Class<R> rType, Function<I, R> rtQuery, Long ttl) {
         return queryWithRdf(keyPrefix, id, rType, rtQuery, ttl, true);
     }
 
@@ -381,7 +381,7 @@ public class CacheHelper {
      * @param <I>       键值类型
      */
     private <R, I> R queryWithRdf(
-            String keyPrefix, I id, TypeReference<R> rType, Function<I, R> rtQuery, Long ttl, boolean cache) {
+        String keyPrefix, I id, TypeReference<R> rType, Function<I, R> rtQuery, Long ttl, boolean cache) {
         return doQueryWithRdf(keyPrefix, id, rType, rtQuery, ttl, 0, cache);
     }
 
@@ -398,7 +398,7 @@ public class CacheHelper {
      * @param <I>       键值类型
      */
     private <R, I> R queryWithRdf(
-            String keyPrefix, I id, Class<R> rType, Function<I, R> rtQuery, Long ttl, boolean cache) {
+        String keyPrefix, I id, Class<R> rType, Function<I, R> rtQuery, Long ttl, boolean cache) {
         TypeReference<R> typeReference = new TypeReference<R>() {
             @Override
             public Type getType() {
@@ -422,7 +422,7 @@ public class CacheHelper {
      * @param <I>       键值类型
      */
     private <R, I> R doQueryWithRdf(
-            String keyPrefix, I id, TypeReference<R> rType, Function<I, R> rtQuery, Long ttl, int itr, boolean cache) {
+        String keyPrefix, I id, TypeReference<R> rType, Function<I, R> rtQuery, Long ttl, int itr, boolean cache) {
         String key = keyPrefix + REALTIME_DATA_FIRST_PREFIX + id;
         // 1.查询缓存
         String resultJson = kvCache.get(key);
@@ -438,8 +438,8 @@ public class CacheHelper {
         }
         // 3.2如果字符串为空，进行缓存构建
         else {
+            // todo 先过限流器，限流之后再加锁
             // 4.1获取互斥锁，获取到进行缓存构建
-            // 5.1 获取互斥锁，成功，开启独立线程，进行缓存重建
             Lock lock = lockAllocator.allocateLock(getLockKey(key));
             if (lock.tryLock()) {
                 try {

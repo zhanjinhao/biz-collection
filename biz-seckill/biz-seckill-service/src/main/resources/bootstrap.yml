@@ -1,0 +1,47 @@
+server:
+  port: 21882
+  servlet:
+    context-path: /seckill
+
+spring:
+  application:
+    name: seckill-service
+  mvc:
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
+
+  cloud:
+    nacos:
+      server-addr: ${nacosServer}:${nacosPort}
+      username: ${nacosUserName}
+      password: ${nacosPassword}
+      discovery:
+        namespace: ${nacosNamespace}
+        group: biz-collection
+      config:
+        file-extension: yaml
+        extension-configs:
+          - data-id: seckill-jdbc.yaml
+            refresh: true
+            group: biz-collection
+          - data-id: seckill-redis.yaml
+            refresh: true
+            group: biz-collection
+        group: biz-collection
+        namespace: ${nacosNamespace}
+        enabled: true
+        refresh-enabled: true
+  config:
+    import:
+      - nacos:seckill-service.yaml?refresh=true
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    local-cache-scope: statement
+  type-handlers-package: cn.addenda.bc.bc.mc.typehandler

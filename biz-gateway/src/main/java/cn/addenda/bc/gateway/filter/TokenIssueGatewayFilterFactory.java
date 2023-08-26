@@ -4,7 +4,7 @@ import cn.addenda.bc.bc.ServiceException;
 import cn.addenda.bc.bc.jc.util.JacksonUtils;
 import cn.addenda.bc.bc.sc.result.ControllerResult;
 import cn.addenda.bc.bc.sc.result.Status;
-import cn.addenda.bc.bc.uc.user.UserInfoDTO;
+import cn.addenda.bc.bc.uc.user.UserInfo;
 import cn.addenda.bc.gateway.constant.RedisKeyConstant;
 import cn.addenda.bc.gateway.util.JWTUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -119,9 +119,9 @@ public class TokenIssueGatewayFilterFactory extends AbstractGatewayFilterFactory
                     ((Flux<? extends DataBuffer>) body)
                         .doOnNext(dataBuffer -> {
                             String respBody = dataBuffer.toString(StandardCharsets.UTF_8);
-                            ControllerResult<UserInfoDTO> userInfoDTO = null;
+                            ControllerResult<UserInfo> userInfoDTO = null;
                             try {
-                                userInfoDTO = JacksonUtils.stringToObject(respBody, new TypeReference<ControllerResult<UserInfoDTO>>() {
+                                userInfoDTO = JacksonUtils.stringToObject(respBody, new TypeReference<ControllerResult<UserInfo>>() {
                                 });
                             } catch (Exception e) {
                             }
@@ -134,7 +134,7 @@ public class TokenIssueGatewayFilterFactory extends AbstractGatewayFilterFactory
                                 String msg = String.format("Cannot issue token from response. Response status is [%s]. Response body is: [%s].", reqStatus, respBody);
                                 throw new ServiceException(msg);
                             }
-                            UserInfoDTO result = userInfoDTO.getResult();
+                            UserInfo result = userInfoDTO.getResult();
                             if (result == null || result.getUserId() == null || result.getUsername() == null) {
                                 String msg = String.format("Cannot issue token from response. UserInfoDTO cannot be null. Response body is: [%s].", respBody);
                                 throw new ServiceException(msg);

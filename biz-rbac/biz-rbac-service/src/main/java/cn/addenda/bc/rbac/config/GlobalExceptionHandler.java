@@ -7,11 +7,12 @@ import cn.addenda.bc.bc.sc.result.Status;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@RestControllerAdvice(basePackages = "cn.addenda.bc.rbac.controller")
+@RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
@@ -37,6 +38,18 @@ public class GlobalExceptionHandler {
         objectControllerResult.setReqStatus(Status.SERVICE_EXCEPTION);
         objectControllerResult.setReqFailedCode(ex.getErrorCode());
         objectControllerResult.setReqAttachment(ex.getMessage());
+        objectControllerResult.setResult(null);
+        return objectControllerResult;
+    }
+
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public Object handleException(NoHandlerFoundException ex, HttpServletRequest request, HttpServletResponse response) {
+        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+
+        ControllerResult<String> objectControllerResult = new ControllerResult<>();
+        objectControllerResult.setReqStatus(Status.SYSTEM_EXCEPTION);
+        objectControllerResult.setReqFailedCode(-2);
+        objectControllerResult.setReqAttachment(request.getRequestURI());
         objectControllerResult.setResult(null);
         return objectControllerResult;
     }

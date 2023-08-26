@@ -21,11 +21,11 @@ public class UserTransmitFilter implements Filter {
             if (StringUtils.hasText(userName)) {
                 userName = UrlUtils.decode(userName);
             }
-            UserInfoDTO userInfoDTO = UserInfoDTO.builder()
+            UserInfo userInfo = UserInfo.builder()
                 .userId(userId)
                 .username(userName)
                 .build();
-            UserContext.setUser(userInfoDTO);
+            UserContext.setUser(userInfo);
         }
         try {
             filterChain.doFilter(servletRequest, servletResponse);

@@ -19,6 +19,7 @@
         <module>redis-common</module>
         <module>biz-common-all</module>
         <module>user-common</module>
+        <module>tomcat-common</module>
     </modules>
 
     <properties>

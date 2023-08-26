@@ -2,7 +2,7 @@ package cn.addenda.bc.gateway.filter;
 
 import cn.addenda.bc.bc.jc.util.UrlUtils;
 import cn.addenda.bc.bc.uc.user.UserConstant;
-import cn.addenda.bc.bc.uc.user.UserInfoDTO;
+import cn.addenda.bc.bc.uc.user.UserInfo;
 import cn.addenda.bc.gateway.constant.RedisKeyConstant;
 import cn.addenda.bc.gateway.util.JWTUtils;
 import lombok.Getter;
@@ -92,7 +92,7 @@ public class TokenValidateGatewayFilterFactory extends AbstractGatewayFilterFact
                 }
 
                 // token无法解析出用户信息时，直接返回未认证
-                UserInfoDTO userInfo = JWTUtils.parseToken(token);
+                UserInfo userInfo = JWTUtils.parseToken(token);
                 if (!validateToken(userInfo)) {
                     ServerHttpResponse response = exchange.getResponse();
                     response.setStatusCode(HttpStatus.UNAUTHORIZED);
@@ -123,7 +123,7 @@ public class TokenValidateGatewayFilterFactory extends AbstractGatewayFilterFact
             return pathPreList.stream().anyMatch(requestPath::startsWith);
         }
 
-        private boolean validateToken(UserInfoDTO userInfo) {
+        private boolean validateToken(UserInfo userInfo) {
             return userInfo != null;
         }
     }

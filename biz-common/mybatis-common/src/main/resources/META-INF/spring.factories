@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+    cn.addenda.bc.bc.mc.config.MybatisCommonAutoConfiguration

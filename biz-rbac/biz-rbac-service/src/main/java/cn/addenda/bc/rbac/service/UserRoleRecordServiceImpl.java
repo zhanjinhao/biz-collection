@@ -6,7 +6,7 @@ import cn.addenda.bc.bc.sc.lock.LockHelper;
 import cn.addenda.bc.bc.sc.transaction.TransactionAttrBuilder;
 import cn.addenda.bc.bc.sc.transaction.TransactionHelper;
 import cn.addenda.bc.bc.uc.user.UserContext;
-import cn.addenda.bc.bc.uc.user.UserInfoDTO;
+import cn.addenda.bc.bc.uc.user.UserInfo;
 import cn.addenda.bc.rbac.manager.RoleManager;
 import cn.addenda.bc.rbac.manager.UserManager;
 import cn.addenda.bc.rbac.manager.UserRoleManager;
@@ -48,7 +48,7 @@ public class UserRoleRecordServiceImpl implements UserRoleRecordService {
     private TransactionHelper transactionHelper;
 
     @Override
-    public UserInfoDTO login(UserRoleRecord userRoleRecord) {
+    public UserInfo login(UserRoleRecord userRoleRecord) {
         Long userSqc = userRoleRecord.getUserSqc();
         Long roleSqc = userRoleRecord.getRoleSqc();
 
@@ -73,7 +73,7 @@ public class UserRoleRecordServiceImpl implements UserRoleRecordService {
                 // 查询出来用户现有的角色
                 UserRoleRecord userRoleRecordFromDb = userRoleRecordManager.queryUserRoleRecordByUserSqc(userSqc);
 
-                UserInfoDTO build = UserInfoDTO.builder()
+                UserInfo build = UserInfo.builder()
                         .userId(user.getUserId())
                         .username(user.getUserName())
                         .build();

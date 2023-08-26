@@ -34,9 +34,10 @@ public class ControllerResult<T> implements Serializable {
      * 请求失败代码。<br/>
      * <ul>
      * <li>已知系统异常由{@link SystemException#getErrorCode()}确定</li>
+     * <li>404 not found 是-2</li>
      * <li>未知系统异常是-1</li>
      * <li>业务异常是999999</li>
-     * <li>网关异常是-2</li>
+     * <li>网关异常是-999999</li>
      * </ul>
      */
     private Integer reqFailedCode;
