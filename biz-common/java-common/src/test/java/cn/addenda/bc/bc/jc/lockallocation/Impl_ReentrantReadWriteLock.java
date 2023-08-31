@@ -8,43 +8,42 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * @author addenda
  * @since 2023/5/30 22:51
  */
-public class ReentrantLockAllocator_ReentrantLock_Segment implements LockAllocator<Lock> {
+public class Impl_ReentrantReadWriteLock implements LockAllocator<Lock> {
 
     private final Map<String, Binary<Lock, AtomicInteger>> lockMap = new ConcurrentHashMap<>();
 
-    private final Lock[] locks;
+    private final ReadWriteLock lock;
 
-    public ReentrantLockAllocator_ReentrantLock_Segment() {
-        locks = new Lock[2 << 4];
-        for (int i = 0; i < 2 << 4; i++) {
-            locks[i] = new ReentrantLock();
-        }
+    public Impl_ReentrantReadWriteLock(boolean fair) {
+        lock = new ReentrantReadWriteLock(fair);
     }
 
     @Override
     public Lock allocateLock(String name) {
-        Lock lock = locks[index(name)];
-        lock.lock();
+        Lock readLock = lock.readLock();
+        readLock.lock();
         try {
             Binary<Lock, AtomicInteger> lockBinary = lockMap
-                    .computeIfAbsent(name, s -> new Binary<>(new ReentrantLock(), new AtomicInteger(0)));
+                .computeIfAbsent(name, s -> new Binary<>(new ReentrantLock(), new AtomicInteger(0)));
             lockBinary.getF2().getAndIncrement();
             return lockBinary.getF1();
         } finally {
-            lock.unlock();
+            readLock.unlock();
         }
     }
 
     @Override
     public void releaseLock(String name) {
-        Lock lock = locks[index(name)];
-        lock.lock();
+        Lock writeLock = lock.writeLock();
+        writeLock.lock();
         try {
             Binary<Lock, AtomicInteger> lockBinary = lockMap.get(name);
             if (lockBinary == null) {
@@ -56,16 +55,8 @@ public class ReentrantLockAllocator_ReentrantLock_Segment implements LockAllocat
                 lockMap.remove(name);
             }
         } finally {
-            lock.unlock();
+            writeLock.unlock();
         }
-    }
-
-    private int index(String name) {
-        return name.hashCode() & ((2 << 4) - 1);
-    }
-
-    public Map<String, Binary<Lock, AtomicInteger>> getLockMap() {
-        return lockMap;
     }
 
 }

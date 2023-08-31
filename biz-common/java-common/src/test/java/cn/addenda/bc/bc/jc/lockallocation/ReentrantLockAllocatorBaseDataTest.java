@@ -1,25 +1,17 @@
 package cn.addenda.bc.bc.jc.lockallocation;
 
-import cn.addenda.bc.bc.jc.concurrent.allocator.LockAllocator;
 import lombok.SneakyThrows;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.locks.Lock;
 import java.util.function.Consumer;
 
 /**
  * @author addenda
  * @since 2023/6/3 12:36
  */
-public abstract class ReentrantLockAllocatorBaseTest {
-
-    LockAllocator<? extends Lock> lockAllocator;
-
-    public ReentrantLockAllocatorBaseTest(LockAllocator<? extends Lock> lockAllocator) {
-        this.lockAllocator = lockAllocator;
-    }
+public class ReentrantLockAllocatorBaseDataTest {
 
     public void baseTest() {
         List<Long> list = new ArrayList<>();
@@ -56,8 +48,6 @@ public abstract class ReentrantLockAllocatorBaseTest {
         join(threadList1);
         join(threadList2);
 
-        assertResult(intArray);
-
         long end = System.currentTimeMillis();
 
 //        System.out.printf(
@@ -82,14 +72,7 @@ public abstract class ReentrantLockAllocatorBaseTest {
             int finalI = i % 10;
             threadList.add(new Thread(() -> {
                 for (int j = 0; j < 1000; j++) {
-                    Lock test = lockAllocator.allocateLock("test" + finalI);
-                    test.lock();
-                    try {
-                        consumer.accept(finalI);
-                    } finally {
-                        test.unlock();
-                        lockAllocator.releaseLock("test" + finalI);
-                    }
+                    consumer.accept(finalI);
                 }
             }));
         }

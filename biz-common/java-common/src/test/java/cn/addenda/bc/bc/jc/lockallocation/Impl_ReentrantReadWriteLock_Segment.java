@@ -16,7 +16,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author addenda
  * @since 2023/5/30 22:51
  */
-public class ReentrantLockAllocator_ReentrantReadWriteLock_Segment implements LockAllocator<Lock> {
+public class Impl_ReentrantReadWriteLock_Segment implements LockAllocator<Lock> {
 
     private final Map<String, Binary<Lock, AtomicInteger>> lockMap = new ConcurrentHashMap<>();
 
@@ -24,7 +24,7 @@ public class ReentrantLockAllocator_ReentrantReadWriteLock_Segment implements Lo
 
     private final int segmentSize;
 
-    public ReentrantLockAllocator_ReentrantReadWriteLock_Segment(int segmentSize) {
+    public Impl_ReentrantReadWriteLock_Segment(int segmentSize) {
         this.segmentSize = segmentSize;
         locks = new ReadWriteLock[segmentSize];
         for (int i = 0; i < segmentSize; i++) {
@@ -32,7 +32,7 @@ public class ReentrantLockAllocator_ReentrantReadWriteLock_Segment implements Lo
         }
     }
 
-    public ReentrantLockAllocator_ReentrantReadWriteLock_Segment() {
+    public Impl_ReentrantReadWriteLock_Segment() {
         this(2 << 5);
     }
 

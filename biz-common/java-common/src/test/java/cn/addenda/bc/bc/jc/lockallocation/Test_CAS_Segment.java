@@ -7,16 +7,16 @@ import org.junit.Test;
  * @author addenda
  * @since 2023/6/3 12:36
  */
-public class RL_LockAllocatorTest extends ReentrantLockAllocatorBaseTest {
+public class Test_CAS_Segment extends ReentrantLockAllocatorBaseTest {
 
-    public RL_LockAllocatorTest() {
-        super(new ReentrantLockAllocator_ReentrantLock());
+    public Test_CAS_Segment() {
+        super(new Impl_CAS_Segment());
     }
 
     @Test
     public void test() {
         // avg: 30
-        main();
+        baseTest();
     }
 
 }

@@ -8,38 +8,43 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * @author addenda
  * @since 2023/5/30 22:51
  */
-public class ReentrantLockAllocator_ReentrantReadWriteLock implements LockAllocator<Lock> {
+public class Impl_ReentrantLock_Segment implements LockAllocator<Lock> {
 
     private final Map<String, Binary<Lock, AtomicInteger>> lockMap = new ConcurrentHashMap<>();
 
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Lock[] locks;
+
+    public Impl_ReentrantLock_Segment() {
+        locks = new Lock[2 << 4];
+        for (int i = 0; i < 2 << 4; i++) {
+            locks[i] = new ReentrantLock();
+        }
+    }
 
     @Override
     public Lock allocateLock(String name) {
-        Lock readLock = lock.readLock();
-        readLock.lock();
+        Lock lock = locks[index(name)];
+        lock.lock();
         try {
             Binary<Lock, AtomicInteger> lockBinary = lockMap
-                    .computeIfAbsent(name, s -> new Binary<>(new ReentrantLock(), new AtomicInteger(0)));
+                .computeIfAbsent(name, s -> new Binary<>(new ReentrantLock(), new AtomicInteger(0)));
             lockBinary.getF2().getAndIncrement();
             return lockBinary.getF1();
         } finally {
-            readLock.unlock();
+            lock.unlock();
         }
     }
 
     @Override
     public void releaseLock(String name) {
-        Lock writeLock = lock.writeLock();
-        writeLock.lock();
+        Lock lock = locks[index(name)];
+        lock.lock();
         try {
             Binary<Lock, AtomicInteger> lockBinary = lockMap.get(name);
             if (lockBinary == null) {
@@ -51,8 +56,16 @@ public class ReentrantLockAllocator_ReentrantReadWriteLock implements LockAlloca
                 lockMap.remove(name);
             }
         } finally {
-            writeLock.unlock();
+            lock.unlock();
         }
+    }
+
+    private int index(String name) {
+        return name.hashCode() & ((2 << 4) - 1);
+    }
+
+    public Map<String, Binary<Lock, AtomicInteger>> getLockMap() {
+        return lockMap;
     }
 
 }
