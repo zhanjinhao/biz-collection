@@ -1,6 +1,6 @@
 package cn.addenda.bc.bc.sc.lock;
 
-import cn.addenda.bc.bc.jc.concurrent.allocator.ReentrantLockAllocator;
+import cn.addenda.bc.bc.jc.allocator.lock.ReentrantLockAllocator;
 
 /**
  * @author addenda

@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -98,7 +99,7 @@ public class CacheHelperTest {
 
     private User queryByRdf(String userId) {
         return cacheHelper.queryWithRdf(userCachePrefix, userId, User.class, s -> {
-            SleepUtils.sleep(TimeUnit.SECONDS, 1);
+            SleepUtils.sleep(TimeUnit.SECONDS, 3);
             return service.queryBy(s);
         }, 500000L);
     }
@@ -109,6 +110,28 @@ public class CacheHelperTest {
 
     private void deleteUser2(String userId) {
         cacheHelper.acceptWithRdf(userCachePrefix, userId, s -> service.deleteUser(userId));
+    }
+
+
+    @Test
+    public void test3() {
+        service.insertUser(User.newUser("Q2"));
+
+        Thread[] threads = new Thread[20];
+        for (int i = 0; i < 20; i++) {
+            threads[i] = new Thread(() -> {
+                User user = queryByRdf("Q2");
+            });
+        }
+
+        Arrays.stream(threads).forEach(Thread::start);
+        Arrays.stream(threads).forEach(thread -> {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
 }

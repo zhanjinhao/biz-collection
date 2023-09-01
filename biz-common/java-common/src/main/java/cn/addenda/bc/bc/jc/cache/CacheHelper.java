@@ -1,9 +1,13 @@
 package cn.addenda.bc.bc.jc.cache;
 
+import cn.addenda.bc.bc.ServiceException;
+import cn.addenda.bc.bc.jc.allocator.lock.LockAllocator;
+import cn.addenda.bc.bc.jc.allocator.lock.ReentrantLockAllocator;
+import cn.addenda.bc.bc.jc.allocator.trafficlimit.TokenBucketTrafficLimiterAllocator;
+import cn.addenda.bc.bc.jc.allocator.trafficlimit.TrafficLimiterAllocator;
 import cn.addenda.bc.bc.jc.concurrent.SimpleNamedThreadFactory;
-import cn.addenda.bc.bc.jc.concurrent.allocator.LockAllocator;
-import cn.addenda.bc.bc.jc.concurrent.allocator.ReentrantLockAllocator;
 import cn.addenda.bc.bc.jc.trafficlimit.RequestIntervalTrafficLimiter;
+import cn.addenda.bc.bc.jc.trafficlimit.TrafficLimiter;
 import cn.addenda.bc.bc.jc.util.DateUtils;
 import cn.addenda.bc.bc.jc.util.JacksonUtils;
 import cn.addenda.bc.bc.jc.util.SleepUtils;
@@ -20,10 +24,12 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * @author addenda
@@ -82,9 +88,14 @@ public class CacheHelper {
     private final Map<String, RequestIntervalTrafficLimiter> trafficLimiterMap = new ConcurrentHashMap<>();
 
     /**
-     * 锁的管理器，防止多个线程拿到不同的锁，导致加锁失败
+     * 锁的管理器，防止查询相同数据的多个线程拿到不同的锁，导致加锁失败
      */
-    private final LockAllocator<? extends Lock> lockAllocator;
+    private final LockAllocator<?> lockAllocator;
+
+    /**
+     * rdf模式下，查询数据库的限流器，解决缓存击穿问题
+     */
+    private final TrafficLimiterAllocator<?> realQueryTrafficLimiterAllocator;
 
     /**
      * 缓存异步构建使用的线程池
@@ -101,22 +112,30 @@ public class CacheHelper {
      */
     private final long ppfExpirationDetectionInterval;
 
+    /**
+     * 在可以使用ServiceException的地方抛ServiceException
+     */
+    private final boolean useServiceException;
+
     public static final long DEFAULT_PPF_EXPIRATION_DETECTION_INTERVAL = 100L;
 
-    public CacheHelper(KVCache<String, String> kvCache, long ppfExpirationDetectionInterval,
-                       LockAllocator<? extends Lock> lockAllocator, ExecutorService cacheBuildEs) {
+    public CacheHelper(KVCache<String, String> kvCache, long ppfExpirationDetectionInterval, LockAllocator<?> lockAllocator,
+                       ExecutorService cacheBuildEs, TrafficLimiterAllocator<?> realQueryTrafficLimiterAllocator, boolean useServiceException) {
         this.kvCache = kvCache;
         this.ppfExpirationDetectionInterval = ppfExpirationDetectionInterval;
         this.lockAllocator = lockAllocator;
         this.cacheBuildEs = cacheBuildEs;
+        this.realQueryTrafficLimiterAllocator = realQueryTrafficLimiterAllocator;
+        this.useServiceException = useServiceException;
     }
 
-    public CacheHelper(KVCache<String, String> kvCache, long ppfExpirationDetectionInterval,
-                       LockAllocator<? extends Lock> lockAllocator) {
+    public CacheHelper(KVCache<String, String> kvCache, long ppfExpirationDetectionInterval, LockAllocator<?> lockAllocator) {
         this.kvCache = kvCache;
         this.ppfExpirationDetectionInterval = ppfExpirationDetectionInterval;
         this.lockAllocator = lockAllocator;
         this.cacheBuildEs = defaultCacheBuildEs();
+        this.realQueryTrafficLimiterAllocator = new TokenBucketTrafficLimiterAllocator(10, 10);
+        this.useServiceException = false;
     }
 
     public CacheHelper(KVCache<String, String> kvCache, long ppfExpirationDetectionInterval) {
@@ -124,6 +143,8 @@ public class CacheHelper {
         this.ppfExpirationDetectionInterval = ppfExpirationDetectionInterval;
         this.lockAllocator = new ReentrantLockAllocator();
         this.cacheBuildEs = defaultCacheBuildEs();
+        this.realQueryTrafficLimiterAllocator = new TokenBucketTrafficLimiterAllocator(10, 10);
+        this.useServiceException = false;
     }
 
     public CacheHelper(KVCache<String, String> kvCache) {
@@ -131,6 +152,8 @@ public class CacheHelper {
         this.ppfExpirationDetectionInterval = DEFAULT_PPF_EXPIRATION_DETECTION_INTERVAL;
         this.lockAllocator = new ReentrantLockAllocator();
         this.cacheBuildEs = defaultCacheBuildEs();
+        this.realQueryTrafficLimiterAllocator = new TokenBucketTrafficLimiterAllocator(10, 10);
+        this.useServiceException = false;
     }
 
     protected ExecutorService defaultCacheBuildEs() {
@@ -225,6 +248,7 @@ public class CacheHelper {
         }
         // 2.2 缓存存在则进入逻辑过期的判断
         else {
+            String lockKey = getLockKey(key);
             // 3.1 命中，需要先把json反序列化为对象
             CacheData<R> cacheData = (CacheData<R>) JacksonUtils.stringToObject(cachedJson, createRdTypeReference(rType));
             LocalDateTime expireTime = cacheData.getExpireTime();
@@ -236,7 +260,8 @@ public class CacheHelper {
             // 4.2 判断是否过期，已过期，需要缓存重建
             else {
                 // 5.1 获取互斥锁，成功，开启独立线程，进行缓存重建
-                Lock lock = lockAllocator.allocateLock(getLockKey(key));
+                Lock lock = lockAllocator.allocate(lockKey);
+                AtomicBoolean newDataReady = new AtomicBoolean(false);
                 AtomicReference<R> newData = new AtomicReference<>(null);
                 if (lock.tryLock()) {
                     try {
@@ -246,30 +271,31 @@ public class CacheHelper {
                                 R r = rtQuery.apply(id);
                                 // 存在缓存里
                                 newData.set(r);
+                                newDataReady.set(true);
                                 setCacheData(key, r, ttl);
                             } catch (Exception e) {
                                 log.error(BUILD_CACHE_ERROR_MSG, key, e);
                             }
                         });
-                        log.info(PPF_SUBMIT_BUILD_CACHE_TASK_SUCCESS, getLockKey(key), data);
                         // 提交完缓存构建任务后休息一段时间，防止其他线程提交缓存构建任务
                         SleepUtils.sleep(TimeUnit.MILLISECONDS, lockWaitTime);
-                        R r;
-                        if ((r = newData.get()) != null) {
-                            return r;
+                        if (newDataReady.get()) {
+                            return newData.get();
+                        } else {
+                            log.info(PPF_SUBMIT_BUILD_CACHE_TASK_SUCCESS, lockKey, data);
                         }
                     } finally {
                         try {
                             lock.unlock();
                         } finally {
-                            lockAllocator.releaseLock(getLockKey(key));
+                            lockAllocator.release(lockKey);
                         }
                     }
                 }
                 // 5.2 获取互斥锁，未成功不进行缓存重建
                 else {
-                    lockAllocator.releaseLock(getLockKey(key));
-                    log.info(PPF_SUBMIT_BUILD_CACHE_TASK_FAILED, getLockKey(key), data);
+                    lockAllocator.release(lockKey);
+                    log.info(PPF_SUBMIT_BUILD_CACHE_TASK_FAILED, lockKey, data);
 
                     // -----------------------------------------------------------
                     // 提交重建的线程如果没有再等待时间内没有获取到新的数据，不会走下面的告警。
@@ -438,45 +464,64 @@ public class CacheHelper {
         }
         // 3.2如果字符串为空，进行缓存构建
         else {
-            // todo 先过限流器，限流之后再加锁
-            // 4.1获取互斥锁，获取到进行缓存构建
-            Lock lock = lockAllocator.allocateLock(getLockKey(key));
-            if (lock.tryLock()) {
-                try {
-                    R r = rtQuery.apply(id);
-                    if (cache) {
-                        LocalDateTime expireTime = LocalDateTime.now();
-                        if (r == null) {
-                            long realTtl = Math.min(cacheNullTtl, ttl);
-                            expireTime = expireTime.plus(realTtl, ChronoUnit.MILLIS);
-                            kvCache.set(key, NULL_OBJECT, realTtl, TimeUnit.MILLISECONDS);
-                        } else {
-                            expireTime = expireTime.plus(ttl, ChronoUnit.MILLIS);
-                            kvCache.set(key, JacksonUtils.objectToString(r), ttl, TimeUnit.MILLISECONDS);
-                        }
-                        log.info(BUILD_CACHE_SUCCESS_MSG, key, r, DateUtils.format(expireTime, DateUtils.FULL_FORMATTER));
+            Supplier<R> supplier = () -> {
+                R r = rtQuery.apply(id);
+                if (cache) {
+                    LocalDateTime expireTime = LocalDateTime.now();
+                    if (r == null) {
+                        long realTtl = Math.min(cacheNullTtl, ttl);
+                        expireTime = expireTime.plus(realTtl, ChronoUnit.MILLIS);
+                        kvCache.set(key, NULL_OBJECT, realTtl, TimeUnit.MILLISECONDS);
+                    } else {
+                        expireTime = expireTime.plus(ttl, ChronoUnit.MILLIS);
+                        kvCache.set(key, JacksonUtils.objectToString(r), ttl, TimeUnit.MILLISECONDS);
                     }
-                    return r;
+                    log.info(BUILD_CACHE_SUCCESS_MSG, key, r, DateUtils.format(expireTime, DateUtils.FULL_FORMATTER));
+                }
+                return r;
+            };
+
+            String lockKey = getLockKey(key);
+            TrafficLimiter trafficLimiter = realQueryTrafficLimiterAllocator.allocate(lockKey);
+            if (trafficLimiter.acquire()) {
+                try {
+                    return supplier.get();
                 } finally {
+                    realQueryTrafficLimiterAllocator.release(lockKey);
+                }
+            } else {
+                realQueryTrafficLimiterAllocator.release(lockKey);
+
+                // 4.1获取互斥锁，获取到进行缓存构建
+                Lock lock = lockAllocator.allocate(lockKey);
+                if (lock.tryLock()) {
                     try {
-                        lock.unlock();
+                        return supplier.get();
                     } finally {
-                        lockAllocator.releaseLock(getLockKey(key));
+                        try {
+                            lock.unlock();
+                        } finally {
+                            lockAllocator.release(lockKey);
+                        }
                     }
                 }
-            }
-            // 4.2获取互斥锁，获取不到就休眠直至抛出异常
-            else {
-                lockAllocator.releaseLock(getLockKey(key));
-                itr++;
-                if (itr >= rdfBusyLoop) {
-                    log.error(RDF_TRY_LOCK_FAIL_TERMINAL, itr, getLockKey(key));
-                    throw new CacheException("系统繁忙，请稍后再试！");
-                } else {
-                    log.info(RDF_TRY_LOCK_FAIL_WAIT, itr, getLockKey(key), lockWaitTime);
-                    SleepUtils.sleep(TimeUnit.MILLISECONDS, lockWaitTime);
-                    // 递归进入的时候，当前线程的tryLock是失败的，所以当前线程不持有锁，即递归进入的状态和初次进入的状态一致
-                    return doQueryWithRdf(keyPrefix, id, rType, rtQuery, ttl, itr, cache);
+                // 4.2获取互斥锁，获取不到就休眠直至抛出异常
+                else {
+                    lockAllocator.release(lockKey);
+                    itr++;
+                    if (itr >= rdfBusyLoop) {
+                        log.error(RDF_TRY_LOCK_FAIL_TERMINAL, itr, lockKey);
+                        if (useServiceException) {
+                            throw new ServiceException("系统繁忙，请稍后再试！");
+                        } else {
+                            throw new CacheException("系统繁忙，请稍后再试！");
+                        }
+                    } else {
+                        log.info(RDF_TRY_LOCK_FAIL_WAIT, itr, lockKey, lockWaitTime);
+                        SleepUtils.sleep(TimeUnit.MILLISECONDS, lockWaitTime);
+                        // 递归进入的时候，当前线程的tryLock是失败的，所以当前线程不持有锁，即递归进入的状态和初次进入的状态一致
+                        return doQueryWithRdf(keyPrefix, id, rType, rtQuery, ttl, itr, cache);
+                    }
                 }
             }
         }

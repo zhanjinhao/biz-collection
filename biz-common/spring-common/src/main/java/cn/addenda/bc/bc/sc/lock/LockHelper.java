@@ -1,7 +1,7 @@
 package cn.addenda.bc.bc.sc.lock;
 
 import cn.addenda.bc.bc.ServiceException;
-import cn.addenda.bc.bc.jc.concurrent.allocator.LockAllocator;
+import cn.addenda.bc.bc.jc.allocator.lock.LockAllocator;
 import cn.addenda.bc.bc.jc.function.TRunnable;
 import cn.addenda.bc.bc.jc.function.TSupplier;
 import cn.addenda.bc.bc.jc.util.ExceptionUtil;

@@ -1,7 +1,7 @@
 package cn.addenda.bc.bc.jc.lockallocation;
 
+import cn.addenda.bc.bc.jc.allocator.lock.LockAllocator;
 import cn.addenda.bc.bc.jc.concurrent.ConcurrentException;
-import cn.addenda.bc.bc.jc.concurrent.allocator.LockAllocator;
 import cn.addenda.bc.bc.jc.pojo.Binary;
 
 import java.util.HashMap;
@@ -21,7 +21,7 @@ public class Impl_CAS implements LockAllocator<Lock> {
     private final AtomicInteger atomicInteger = new AtomicInteger(0);
 
     @Override
-    public Lock allocateLock(String name) {
+    public Lock allocate(String name) {
         while (!atomicInteger.compareAndSet(0, 1)) {
         }
         try {
@@ -37,7 +37,7 @@ public class Impl_CAS implements LockAllocator<Lock> {
     }
 
     @Override
-    public void releaseLock(String name) {
+    public void release(String name) {
         while (!atomicInteger.compareAndSet(0, 1)) {
         }
         try {

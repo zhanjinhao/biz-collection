@@ -1,7 +1,8 @@
 package cn.addenda.bc.bc.rc.cache;
 
+import cn.addenda.bc.bc.jc.allocator.lock.LockAllocator;
+import cn.addenda.bc.bc.jc.allocator.trafficlimit.TrafficLimiterAllocator;
 import cn.addenda.bc.bc.jc.cache.CacheHelper;
-import cn.addenda.bc.bc.jc.concurrent.allocator.LockAllocator;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.util.concurrent.ExecutorService;
@@ -15,14 +16,13 @@ public class RedisCacheHelper extends CacheHelper {
 
     private final StringRedisTemplate stringRedisTemplate;
 
-    public RedisCacheHelper(StringRedisTemplate stringRedisTemplate, long ppfExpirationDetectionInterval,
-                            LockAllocator<? extends Lock> lockAllocator, ExecutorService cacheBuildEs) {
-        super(new RedisKVCache(stringRedisTemplate), ppfExpirationDetectionInterval, lockAllocator, cacheBuildEs);
+    public RedisCacheHelper(StringRedisTemplate stringRedisTemplate, long ppfExpirationDetectionInterval, LockAllocator<?> lockAllocator,
+                            ExecutorService cacheBuildEs, TrafficLimiterAllocator<?> realQueryTrafficLimiterAllocator, boolean useServiceException) {
+        super(new RedisKVCache(stringRedisTemplate), ppfExpirationDetectionInterval, lockAllocator, cacheBuildEs, realQueryTrafficLimiterAllocator, useServiceException);
         this.stringRedisTemplate = stringRedisTemplate;
     }
 
-    public RedisCacheHelper(StringRedisTemplate stringRedisTemplate, long ppfExpirationDetectionInterval,
-                            LockAllocator<? extends Lock> lockAllocator) {
+    public RedisCacheHelper(StringRedisTemplate stringRedisTemplate, long ppfExpirationDetectionInterval, LockAllocator<? extends Lock> lockAllocator) {
         super(new RedisKVCache(stringRedisTemplate), ppfExpirationDetectionInterval, lockAllocator);
         this.stringRedisTemplate = stringRedisTemplate;
     }

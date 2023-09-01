@@ -1,6 +1,6 @@
 package cn.addenda.bc.bc.jc.lockallocation;
 
-import cn.addenda.bc.bc.jc.concurrent.allocator.LockAllocator;
+import cn.addenda.bc.bc.jc.allocator.lock.LockAllocator;
 import lombok.SneakyThrows;
 
 import java.util.ArrayList;
@@ -82,13 +82,13 @@ public abstract class ReentrantLockAllocatorBaseTest {
             int finalI = i % 10;
             threadList.add(new Thread(() -> {
                 for (int j = 0; j < 1000; j++) {
-                    Lock test = lockAllocator.allocateLock("test" + finalI);
+                    Lock test = lockAllocator.allocate("test" + finalI);
                     test.lock();
                     try {
                         consumer.accept(finalI);
                     } finally {
                         test.unlock();
-                        lockAllocator.releaseLock("test" + finalI);
+                        lockAllocator.release("test" + finalI);
                     }
                 }
             }));

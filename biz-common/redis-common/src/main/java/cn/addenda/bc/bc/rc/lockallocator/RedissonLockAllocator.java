@@ -1,6 +1,6 @@
 package cn.addenda.bc.bc.rc.lockallocator;
 
-import cn.addenda.bc.bc.jc.concurrent.allocator.LockAllocator;
+import cn.addenda.bc.bc.jc.allocator.lock.LockAllocator;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 
@@ -17,12 +17,12 @@ public class RedissonLockAllocator implements LockAllocator<RLock> {
     }
 
     @Override
-    public RLock allocateLock(String name) {
+    public RLock allocate(String name) {
         return redissonClient.getLock(name);
     }
 
     @Override
-    public void releaseLock(String name) {
+    public void release(String name) {
 
     }
 }

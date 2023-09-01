@@ -1,6 +1,6 @@
 package cn.addenda.bc.rbac.config;
 
-import cn.addenda.bc.bc.jc.concurrent.allocator.LockAllocator;
+import cn.addenda.bc.bc.jc.allocator.lock.LockAllocator;
 import cn.addenda.bc.bc.rc.cache.RedisCacheHelper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;

@@ -1,7 +1,7 @@
 package cn.addenda.bc.bc.jc.lockallocation;
 
+import cn.addenda.bc.bc.jc.allocator.lock.LockAllocator;
 import cn.addenda.bc.bc.jc.concurrent.ConcurrentException;
-import cn.addenda.bc.bc.jc.concurrent.allocator.LockAllocator;
 import cn.addenda.bc.bc.jc.pojo.Binary;
 
 import java.util.HashMap;
@@ -20,7 +20,7 @@ public class Impl_Synchronized implements LockAllocator<Lock> {
     private final Lock lock = new ReentrantLock();
 
     @Override
-    public Lock allocateLock(String name) {
+    public Lock allocate(String name) {
         synchronized (lock) {
             Binary<Lock, Integer> lockBinary = lockMap
                 .computeIfAbsent(name, s -> new Binary<>(new ReentrantLock(), 0));
@@ -30,7 +30,7 @@ public class Impl_Synchronized implements LockAllocator<Lock> {
     }
 
     @Override
-    public void releaseLock(String name) {
+    public void release(String name) {
         synchronized (lock) {
             Binary<Lock, Integer> lockBinary = lockMap.get(name);
             if (lockBinary == null) {

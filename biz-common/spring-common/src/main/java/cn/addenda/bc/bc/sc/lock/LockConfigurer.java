@@ -1,6 +1,6 @@
 package cn.addenda.bc.bc.sc.lock;
 
-import cn.addenda.bc.bc.jc.concurrent.allocator.LockAllocator;
+import cn.addenda.bc.bc.jc.allocator.lock.LockAllocator;
 
 import java.util.concurrent.locks.Lock;
 

@@ -1,7 +1,7 @@
 package cn.addenda.bc.bc.jc.lockallocation;
 
+import cn.addenda.bc.bc.jc.allocator.lock.LockAllocator;
 import cn.addenda.bc.bc.jc.concurrent.ConcurrentException;
-import cn.addenda.bc.bc.jc.concurrent.allocator.LockAllocator;
 import cn.addenda.bc.bc.jc.pojo.Binary;
 
 import java.util.Map;
@@ -28,7 +28,7 @@ public class Impl_Synchronized_Segment implements LockAllocator<Lock> {
     }
 
     @Override
-    public Lock allocateLock(String name) {
+    public Lock allocate(String name) {
         Lock lock = locks[index(name)];
         synchronized (lock) {
             Binary<Lock, AtomicInteger> lockBinary = lockMap
@@ -39,7 +39,7 @@ public class Impl_Synchronized_Segment implements LockAllocator<Lock> {
     }
 
     @Override
-    public void releaseLock(String name) {
+    public void release(String name) {
         Lock lock = locks[index(name)];
         synchronized (lock) {
             Binary<Lock, AtomicInteger> lockBinary = lockMap.get(name);

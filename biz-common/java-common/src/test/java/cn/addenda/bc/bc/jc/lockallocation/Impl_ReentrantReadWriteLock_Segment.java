@@ -1,7 +1,7 @@
 package cn.addenda.bc.bc.jc.lockallocation;
 
+import cn.addenda.bc.bc.jc.allocator.lock.LockAllocator;
 import cn.addenda.bc.bc.jc.concurrent.ConcurrentException;
-import cn.addenda.bc.bc.jc.concurrent.allocator.LockAllocator;
 import cn.addenda.bc.bc.jc.pojo.Binary;
 
 import java.util.Map;
@@ -37,7 +37,7 @@ public class Impl_ReentrantReadWriteLock_Segment implements LockAllocator<Lock> 
     }
 
     @Override
-    public Lock allocateLock(String name) {
+    public Lock allocate(String name) {
         ReadWriteLock readWriteLock = locks[index(name)];
         Lock readLock = readWriteLock.readLock();
         readLock.lock();
@@ -52,7 +52,7 @@ public class Impl_ReentrantReadWriteLock_Segment implements LockAllocator<Lock> 
     }
 
     @Override
-    public void releaseLock(String name) {
+    public void release(String name) {
         ReadWriteLock readWriteLock = locks[index(name)];
         Lock writeLock = readWriteLock.writeLock();
 

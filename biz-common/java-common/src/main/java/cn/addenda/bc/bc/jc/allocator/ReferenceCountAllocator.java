@@ -1,4 +1,4 @@
-package cn.addenda.bc.bc.jc.concurrent.allocator;
+package cn.addenda.bc.bc.jc.allocator;
 
 import cn.addenda.bc.bc.jc.concurrent.ConcurrentException;
 import cn.addenda.bc.bc.jc.concurrent.LockFactory;
@@ -11,65 +11,67 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 /**
  * @author addenda
  * @since 2023/5/30 22:51
  */
 @ToString(exclude = {"lockFactory"})
-public class ReentrantLockAllocator implements LockAllocator<ReentrantLock> {
+public abstract class ReferenceCountAllocator<T> implements Allocator<T> {
 
-    private final Map<String, Binary<ReentrantLock, AtomicInteger>> lockMap = new ConcurrentHashMap<>();
+    private final Map<String, Binary<T, AtomicInteger>> map = new ConcurrentHashMap<>();
 
     private final LockFactory<String> lockFactory;
 
     @Getter
     private final int segmentSize;
 
-    public ReentrantLockAllocator(int segmentSize) {
+    protected ReferenceCountAllocator(int segmentSize) {
         this.segmentSize = segmentSize;
         lockFactory = new ReentrantSegmentLockFactory(segmentSize);
     }
 
-    public ReentrantLockAllocator() {
+    protected ReferenceCountAllocator() {
         this(2 << 5);
     }
 
     @Override
-    public ReentrantLock allocateLock(String name) {
+    public T allocate(String name) {
         Lock lock = lockFactory.getLock(name);
         lock.lock();
         try {
-            Binary<ReentrantLock, AtomicInteger> lockBinary = lockMap
-                    .computeIfAbsent(name, s -> new Binary<>(new ReentrantLock(), new AtomicInteger(0)));
-            lockBinary.getF2().getAndIncrement();
-            return lockBinary.getF1();
+            Binary<T, AtomicInteger> binary = map
+                .computeIfAbsent(name, s -> new Binary<>(referenceSupplier().get(), new AtomicInteger(0)));
+            binary.getF2().getAndIncrement();
+            return binary.getF1();
         } finally {
             lock.unlock();
         }
     }
 
     @Override
-    public void releaseLock(String name) {
+    public void release(String name) {
         Lock lock = lockFactory.getLock(name);
         lock.lock();
         try {
-            Binary<ReentrantLock, AtomicInteger> lockBinary = lockMap.get(name);
-            if (lockBinary == null) {
-                String msg = String.format("锁 [%s] 不存在！", name);
+            Binary<T, AtomicInteger> binary = map.get(name);
+            if (binary == null) {
+                String msg = String.format("资源 [%s] 不存在！", name);
                 throw new ConcurrentException(msg);
             }
-            int i = lockBinary.getF2().decrementAndGet();
+            int i = binary.getF2().decrementAndGet();
             if (i == 0) {
-                i = lockBinary.getF2().get();
+                i = binary.getF2().get();
                 if (i == 0) {
-                    lockMap.remove(name);
+                    map.remove(name);
                 }
             }
         } finally {
             lock.unlock();
         }
     }
+
+    protected abstract Supplier<T> referenceSupplier();
 
 }

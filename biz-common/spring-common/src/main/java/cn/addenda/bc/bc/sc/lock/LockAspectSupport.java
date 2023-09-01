@@ -1,7 +1,7 @@
 package cn.addenda.bc.bc.sc.lock;
 
 import cn.addenda.bc.bc.ServiceException;
-import cn.addenda.bc.bc.jc.concurrent.allocator.LockAllocator;
+import cn.addenda.bc.bc.jc.allocator.lock.LockAllocator;
 import cn.addenda.bc.bc.jc.function.TSupplier;
 import cn.addenda.bc.bc.sc.util.SpELUtils;
 import lombok.Getter;
@@ -42,7 +42,7 @@ public class LockAspectSupport {
         }
 
         String lockedKey = namespace + ":" + lockedAttr.getPrefix() + ":" + key + ":lock";
-        Lock lock = lockAllocator.allocateLock(lockedKey);
+        Lock lock = lockAllocator.allocate(lockedKey);
         try {
             // Lock类有四个加锁方法：
             //  1.lock()

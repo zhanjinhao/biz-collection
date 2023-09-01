@@ -1,6 +1,6 @@
 package cn.addenda.bc.rbac.config;
 
-import cn.addenda.bc.bc.jc.concurrent.allocator.ReentrantLockAllocator;
+import cn.addenda.bc.bc.jc.allocator.lock.ReentrantLockAllocator;
 import cn.addenda.bc.bc.rc.lockallocator.RedissonLockAllocator;
 import org.redisson.api.RedissonClient;
 import org.springframework.context.annotation.Bean;

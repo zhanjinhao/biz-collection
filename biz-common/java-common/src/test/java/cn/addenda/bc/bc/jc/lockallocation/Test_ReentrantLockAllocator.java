@@ -1,7 +1,7 @@
 package cn.addenda.bc.bc.jc.lockallocation;
 
 
-import cn.addenda.bc.bc.jc.concurrent.allocator.ReentrantLockAllocator;
+import cn.addenda.bc.bc.jc.allocator.lock.ReentrantLockAllocator;
 import org.junit.Test;
 
 /**
