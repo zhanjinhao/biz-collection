@@ -1,6 +1,5 @@
 package cn.addenda.bc.bc.sc.argreslog;
 
-import cn.addenda.bc.bc.SystemException;
 import cn.addenda.bc.bc.jc.function.TRunnable;
 import cn.addenda.bc.bc.jc.function.TSupplier;
 import cn.addenda.bc.bc.jc.util.ExceptionUtil;
@@ -35,8 +34,7 @@ public class ArgResLogUtils extends ArgResLogSupport {
         try {
             return invoke(attr, arguments, supplier, callerInfo);
         } catch (Throwable throwable) {
-            ExceptionUtil.reportAsRuntimeException(throwable, ArgResLogException.class);
-            throw SystemException.unExpectedException();
+            throw ExceptionUtil.wrapAsRuntimeException(throwable, ArgResLogException.class);
         }
     }
 }

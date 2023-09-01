@@ -1,6 +1,5 @@
 package cn.addenda.bc.bc.sc.lock;
 
-import cn.addenda.bc.bc.ServiceException;
 import cn.addenda.bc.bc.jc.allocator.lock.LockAllocator;
 import cn.addenda.bc.bc.jc.function.TRunnable;
 import cn.addenda.bc.bc.jc.function.TSupplier;
@@ -71,8 +70,7 @@ public class LockHelper extends LockAspectSupport {
         try {
             return (R) invokeWithinLock(attr, arguments, supplier::get, null);
         } catch (Throwable throwable) {
-            ExceptionUtil.reportAsRuntimeException(throwable, LockException.class);
-            throw new ServiceException("系统异常");
+            throw ExceptionUtil.wrapAsRuntimeException(throwable, LockException.class);
         }
     }
 

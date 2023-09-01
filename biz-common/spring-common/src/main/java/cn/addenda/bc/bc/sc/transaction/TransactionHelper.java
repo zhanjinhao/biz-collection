@@ -1,6 +1,5 @@
 package cn.addenda.bc.bc.sc.transaction;
 
-import cn.addenda.bc.bc.SystemException;
 import cn.addenda.bc.bc.jc.function.TRunnable;
 import cn.addenda.bc.bc.jc.function.TSupplier;
 import cn.addenda.bc.bc.jc.util.ExceptionUtil;
@@ -82,8 +81,7 @@ public class TransactionHelper extends TransactionAspectSupport {
         try {
             return (R) invokeWithinTransaction(extractMethod(supplier), supplier.getClass(), () -> supplier.get());
         } catch (Throwable throwable) {
-            ExceptionUtil.reportAsRuntimeException(throwable, TransactionException.class);
-            throw SystemException.unExpectedException();
+            throw ExceptionUtil.wrapAsRuntimeException(throwable, TransactionException.class);
         } finally {
             TransactionHelperAttrSource.popAttr();
         }

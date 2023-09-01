@@ -50,18 +50,18 @@ public class IdempotentSupport implements EnvironmentAware, InitializingBean, Ap
 
         if (key == null || key.length() == 0) {
             String msg = String.format("Data Id of idempotent operation can not be null or \"\". arguments: [%s], spEL: [%s].",
-                    JacksonUtils.objectToString(arguments), spEL);
+                JacksonUtils.objectToString(arguments), spEL);
             throw new IdempotentException(msg);
         }
 
         ConsumeMode consumeMode = attr.getConsumeMode();
         IdempotentParamWrapper param = IdempotentParamWrapper.builder()
-                .namespace(namespace)
-                .prefix(attr.getPrefix())
-                .key(key)
-                .consumeMode(consumeMode)
-                .timeoutSecs((int) attr.getTimeUnit().toSeconds(attr.getTimeout()))
-                .build();
+            .namespace(namespace)
+            .prefix(attr.getPrefix())
+            .key(key)
+            .consumeMode(consumeMode)
+            .timeoutSecs((int) attr.getTimeUnit().toSeconds(attr.getTimeout()))
+            .build();
 
         switch (consumeMode) {
             case SUCCESS:
@@ -115,7 +115,7 @@ public class IdempotentSupport implements EnvironmentAware, InitializingBean, Ap
                 case EXCEPTION:
                     storageCenter.modifyStatus(param, ConsumeStatus.CONSUMING);
                     log.info("[{}] has consumed exceptionally. re-consume it. Mode: [{}]. Arguments: [{}].",
-                            param, param.getConsumeMode(), JacksonUtils.objectToString(arguments));
+                        param, param.getConsumeMode(), JacksonUtils.objectToString(arguments));
                     return consume(storageCenter, supplier, param, attr, arguments);
                 case SUCCESS:
                     return repeatConsume(param, attr, arguments);
@@ -164,7 +164,7 @@ public class IdempotentSupport implements EnvironmentAware, InitializingBean, Ap
         switch (scenario) {
             case MQ:
                 log.error("[{}] has consumed. Mode: [{}]. Arguments: [{}].",
-                        param, param.getConsumeMode(), JacksonUtils.objectToString(arguments));
+                    param, param.getConsumeMode(), JacksonUtils.objectToString(arguments));
                 return null;
             case REST:
                 String repeatConsumptionMsg = attr.getRepeatConsumptionMsg();

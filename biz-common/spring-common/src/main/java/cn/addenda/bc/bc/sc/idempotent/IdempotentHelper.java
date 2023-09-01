@@ -1,6 +1,5 @@
 package cn.addenda.bc.bc.sc.idempotent;
 
-import cn.addenda.bc.bc.SystemException;
 import cn.addenda.bc.bc.jc.function.TRunnable;
 import cn.addenda.bc.bc.jc.function.TSupplier;
 import cn.addenda.bc.bc.jc.util.ExceptionUtil;
@@ -61,8 +60,7 @@ public class IdempotentHelper extends IdempotentSupport {
         try {
             return (R) invokeWithIdempotent(attr, arguments, supplier::get, null);
         } catch (Throwable throwable) {
-            ExceptionUtil.reportAsRuntimeException(throwable, IdempotentException.class);
-            throw SystemException.unExpectedException();
+            throw ExceptionUtil.wrapAsRuntimeException(throwable, IdempotentException.class);
         }
     }
 
