@@ -29,14 +29,19 @@ public class RedisStorageCenter implements StorageCenter {
     @Override
     public boolean saveIfAbsent(IdempotentParamWrapper param, ConsumeStatus consumeStatus) {
         return Boolean.TRUE.equals(
-                stringRedisTemplate.opsForValue().setIfAbsent(param.getFullKey(),
-                        consumeStatus.name(), param.getTimeoutSecs(), TimeUnit.SECONDS));
+            stringRedisTemplate.opsForValue().setIfAbsent(param.getFullKey(),
+                consumeStatus.name(), param.getTimeoutSecs(), TimeUnit.SECONDS));
     }
 
     @Override
     public void modifyStatus(IdempotentParamWrapper param, ConsumeStatus consumeStatus) {
         stringRedisTemplate.opsForValue().set(
-                param.getFullKey(), consumeStatus.name(), param.getTimeoutSecs(), TimeUnit.SECONDS);
+            param.getFullKey(), consumeStatus.name(), param.getTimeoutSecs(), TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void delete(IdempotentParamWrapper param) {
+        stringRedisTemplate.delete(param.getFullKey());
     }
 
     /**
@@ -46,15 +51,19 @@ public class RedisStorageCenter implements StorageCenter {
     @Override
     public Object exceptionCallback(IdempotentParamWrapper param, IdempotentScenario scenario,
                                     Object[] arguments, Throwable e) throws Throwable {
-        switch (scenario) {
-            case MQ:
-                log.error("[{}] Consume error. Mode: [{}]. Arguments: [{}].",
+        try {
+            switch (scenario) {
+                case MQ:
+                    log.error("[{}] Consume error. Mode: [{}]. Arguments: [{}].",
                         param, param.getConsumeMode(), JacksonUtils.objectToString(arguments));
-                return null;
-            case REST:
-                throw e;
-            default: // unreachable
-                return null;
+                    return null;
+                case REST:
+                    throw e;
+                default: // unreachable
+                    return null;
+            }
+        } finally {
+            modifyStatus(param, ConsumeStatus.EXCEPTION);
         }
     }
 

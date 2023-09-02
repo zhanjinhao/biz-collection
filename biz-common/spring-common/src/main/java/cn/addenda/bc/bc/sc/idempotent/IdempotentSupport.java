@@ -4,8 +4,10 @@ import cn.addenda.bc.bc.ServiceException;
 import cn.addenda.bc.bc.jc.function.TSupplier;
 import cn.addenda.bc.bc.jc.util.JacksonUtils;
 import cn.addenda.bc.bc.jc.util.SleepUtils;
+import cn.addenda.bc.bc.jc.util.TimeUnitUtils;
 import cn.addenda.bc.bc.sc.idempotent.storagecenter.IdempotentParamWrapper;
 import cn.addenda.bc.bc.sc.idempotent.storagecenter.StorageCenter;
+import cn.addenda.bc.bc.sc.springcontext.ValueResolverHelper;
 import cn.addenda.bc.bc.sc.util.SpELUtils;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,7 @@ import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -74,14 +77,33 @@ public class IdempotentSupport implements EnvironmentAware, InitializingBean, Ap
     }
 
     /**
+     * 设置{@link ConsumeStatus#CONSUMING}状态失败时：
+     * <ul><li>
+     * 如果是REST模式，需要将异常扔给用户；
+     * </li>
+     * <li>
+     * 如果是MQ模式，需要记录消息
+     * </li></ul>
+     * 具体实现放在{@link StorageCenter#exceptionCallback(IdempotentParamWrapper, IdempotentScenario, Object[], Throwable)}里。
+     */
+    private boolean setConsumingStatusIfAbsent(IdempotentParamWrapper param, IdempotentAttr attr, StorageCenter storageCenter, Object[] arguments) throws Throwable {
+        try {
+            return storageCenter.saveIfAbsent(param, ConsumeStatus.CONSUMING);
+        } catch (Throwable t) {
+            storageCenter.exceptionCallback(param, attr.getScenario(), arguments, t);
+            throw t;
+        }
+    }
+
+    /**
      * 数据当前状态无论是 {@link ConsumeStatus#CONSUMING}/{@link ConsumeStatus#SUCCESS}/{@link ConsumeStatus#EXCEPTION}，都认为消费过。
      */
     private Object handleCompleteMode(IdempotentParamWrapper param, IdempotentAttr attr,
                                       TSupplier<Object> supplier, Object[] arguments) throws Throwable {
         String storageCenterName = attr.getStorageCenter();
         StorageCenter storageCenter = storageCenterMap.computeIfAbsent(storageCenterName, s -> (StorageCenter) applicationContext.getBean(storageCenterName));
+        boolean b = setConsumingStatusIfAbsent(param, attr, storageCenter, arguments);
 
-        boolean b = storageCenter.saveIfAbsent(param, ConsumeStatus.CONSUMING);
         if (b) {
             return consume(storageCenter, supplier, param, attr, arguments);
         } else {
@@ -105,8 +127,8 @@ public class IdempotentSupport implements EnvironmentAware, InitializingBean, Ap
                                      TSupplier<Object> supplier, boolean retry, Object[] arguments) throws Throwable {
         String storageCenterName = attr.getStorageCenter();
         StorageCenter storageCenter = storageCenterMap.computeIfAbsent(storageCenterName, s -> (StorageCenter) applicationContext.getBean(storageCenterName));
+        boolean b = setConsumingStatusIfAbsent(param, attr, storageCenter, arguments);
 
-        boolean b = storageCenter.saveIfAbsent(param, ConsumeStatus.CONSUMING);
         if (b) {
             return consume(storageCenter, supplier, param, attr, arguments);
         } else {
@@ -124,8 +146,16 @@ public class IdempotentSupport implements EnvironmentAware, InitializingBean, Ap
                         SleepUtils.sleep(attr.getTimeUnit(), attr.getExpectedCost());
                         return handleSuccessMode(param, attr, supplier, false, arguments);
                     } else {
-                        String msg = String.format("[%s] has always been in consumption. ConsumeCost: [%s ms].", param, attr.getTimeUnit().toMillis(attr.getExpectedCost()));
-                        throw new ServiceException(msg);
+                        String msg = String.format("[%s] has always been in consumption. Expected cost: [%s ms].", param, attr.getTimeUnit().toMillis(attr.getExpectedCost()));
+                        IdempotentScenario scenario = attr.getScenario();
+                        switch (scenario) {
+                            case MQ:
+                                throw new IdempotentException(msg);
+                            case REST:
+                                throw new ServiceException(msg);
+                            default: // unreachable
+                                return null;
+                        }
                     }
                 default: // unreachable
                     return null;
@@ -146,10 +176,19 @@ public class IdempotentSupport implements EnvironmentAware, InitializingBean, Ap
             storageCenter.modifyStatus(param, ConsumeStatus.SUCCESS);
             return o;
         } catch (ServiceException e) {
-            storageCenter.modifyStatus(param, ConsumeStatus.EXCEPTION);
-            throw e;
+            // MQ场景下，如果发生ServiceException，和其他异常一样处理
+            // REST场景下，如果发生了ServiceException，不能阻塞用户的重试
+            IdempotentScenario scenario = attr.getScenario();
+            switch (scenario) {
+                case MQ:
+                    return storageCenter.exceptionCallback(param, scenario, arguments, e);
+                case REST:
+                    storageCenter.delete(param);
+                    throw e;
+                default: // unreachable
+                    return null;
+            }
         } catch (Exception e) {
-            storageCenter.modifyStatus(param, ConsumeStatus.EXCEPTION);
             IdempotentScenario scenario = attr.getScenario();
             return storageCenter.exceptionCallback(param, scenario, arguments, e);
         }
@@ -168,7 +207,20 @@ public class IdempotentSupport implements EnvironmentAware, InitializingBean, Ap
                 return null;
             case REST:
                 String repeatConsumptionMsg = attr.getRepeatConsumptionMsg();
-                throw new ServiceException(repeatConsumptionMsg.replace("{}", param.getSimpleKey()));
+                Properties properties = new Properties();
+                properties.put("prefix", attr.getPrefix());
+                properties.put("spEL", attr.getSpEL());
+                properties.put("scenario", attr.getScenario());
+                properties.put("storageCenter", attr.getStorageCenter());
+                properties.put("consumeMode", attr.getConsumeMode());
+                properties.put("timeUnit", attr.getTimeUnit());
+                properties.put("expectedCost", attr.getExpectedCost());
+                properties.put("timeout", attr.getTimeout());
+                properties.put("timeoutStr", attr.getTimeout() + " " + TimeUnitUtils.convertTimeUnit(attr.getTimeUnit()));
+                properties.put("key", param.getKey());
+                properties.put("simpleKey", param.getSimpleKey());
+                properties.put("fullKey", param.getFullKey());
+                throw new ServiceException(ValueResolverHelper.resolveHashPlaceholder(repeatConsumptionMsg, properties));
             default: // unreachable
                 return null;
         }

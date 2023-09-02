@@ -18,7 +18,7 @@ public class IdempotentAttr {
 
     public static final String DEFAULT_PREFIX = "prefix";
 
-    public static final String DEFAULT_REPEAT_CONSUMPTION_MSG = "数据 [{}] 已处理过！";
+    public static final String DEFAULT_REPEAT_CONSUMPTION_MSG = "数据 [${key}] 已处理过！";
 
     public static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.SECONDS;
 

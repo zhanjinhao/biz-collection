@@ -36,8 +36,8 @@ public class DbStorageCenter implements StorageCenter {
     }
 
     private static final String GET_SQL =
-            "select `consume_status` from t_idempotent_storage_center "
-                    + "where `namespace` = ? and `prefix` = ? and `key` = ? and `consume_mode` = ? and `expire_time` > now()";
+        "select `consume_status` from t_idempotent_storage_center "
+            + "where `namespace` = ? and `prefix` = ? and `key` = ? and `consume_mode` = ? and `expire_time` > now() and `if_del` = 0";
 
     @Override
     public ConsumeStatus get(IdempotentParamWrapper paramWrapper) {
@@ -76,8 +76,8 @@ public class DbStorageCenter implements StorageCenter {
     }
 
     private static final String SAVE_SQL =
-            "insert into t_idempotent_storage_center "
-                    + "set `namespace` = ?, `prefix` = ?, `key` = ?, `consume_mode` = ?, `expire_time` = ?, `consume_status` = ?";
+        "insert into t_idempotent_storage_center "
+            + "set `namespace` = ?, `prefix` = ?, `key` = ?, `consume_mode` = ?, `expire_time` = ?, `consume_status` = ?, `if_del` = ?";
 
     @Override
     public boolean saveIfAbsent(IdempotentParamWrapper paramWrapper, ConsumeStatus consumeStatus) {
@@ -108,8 +108,8 @@ public class DbStorageCenter implements StorageCenter {
     }
 
     private static final String UPDATE_SQL =
-            "update t_idempotent_storage_center "
-                    + "set `consume_status` = ?, `expire_time` = ? where `namespace` = ? and `prefix` = ? and `key` = ? and `consume_mode` = ? ";
+        "update t_idempotent_storage_center "
+            + "set `consume_status` = ?, `expire_time` = ? where `namespace` = ? and `prefix` = ? and `key` = ? and `consume_mode` = ? and `if_del` = 0";
 
     @Override
     public void modifyStatus(IdempotentParamWrapper paramWrapper, ConsumeStatus consumeStatus) {
@@ -132,50 +132,77 @@ public class DbStorageCenter implements StorageCenter {
         }
     }
 
-    private static final String SAVE_LOG_SQL =
-            "insert into t_idempotent_exception_log "
-                    + "set `namespace` = ?, `prefix` = ?, `key` = ?, `consume_mode` = ?, `args` = ?, `exception_msg` = ?, `exception_stack` = ? ";
+    private static final String DELETE_SQL =
+        "update t_idempotent_storage_center "
+            + "set if_del = 1 where `namespace` = ? and `prefix` = ? and `key` = ? and `consume_mode` = ? and `if_del` = 0";
 
     @Override
-    public Object exceptionCallback(IdempotentParamWrapper paramWrapper, IdempotentScenario scenario, Object[] arguments, Throwable throwable) throws Throwable {
-        switch (scenario) {
-            case MQ:
-                String argsJson = JacksonUtils.objectToString(arguments);
-                log.error("[{}] Consume error. Mode: [{}]. Arguments: [{}].",
-                        paramWrapper, paramWrapper.getConsumeMode(), argsJson);
-                try (Connection connection = dataSource.getConnection()) {
-                    boolean autoCommit = connection.getAutoCommit();
-                    connection.setAutoCommit(false);
-                    try (PreparedStatement preparedStatement = connection.prepareStatement(SAVE_LOG_SQL)) {
-                        preparedStatement.setString(1, paramWrapper.getNamespace());
-                        preparedStatement.setString(2, paramWrapper.getPrefix());
-                        preparedStatement.setString(3, paramWrapper.getKey());
-                        preparedStatement.setString(4, paramWrapper.getConsumeMode().name());
-                        preparedStatement.setObject(5, argsJson);
-                        String message = throwable.getMessage();
-                        if (message.length() > 1000) {
-                            message = message.substring(0, 1000);
+    public void delete(IdempotentParamWrapper paramWrapper) {
+        try (Connection connection = dataSource.getConnection()) {
+            boolean autoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            try (PreparedStatement preparedStatement = connection.prepareStatement(DELETE_SQL)) {
+                preparedStatement.setString(1, paramWrapper.getNamespace());
+                preparedStatement.setString(2, paramWrapper.getPrefix());
+                preparedStatement.setString(3, paramWrapper.getKey());
+                preparedStatement.setString(4, paramWrapper.getConsumeMode().name());
+                preparedStatement.executeUpdate();
+            }
+            connection.commit();
+            connection.setAutoCommit(autoCommit);
+        } catch (SQLException e) {
+            throw new IdempotentException(e);
+        }
+    }
+
+    private static final String SAVE_LOG_SQL =
+        "insert into t_idempotent_exception_log "
+            + "set `namespace` = ?, `prefix` = ?, `key` = ?, `consume_mode` = ?, `args` = ?, `exception_msg` = ?, `exception_stack` = ? ";
+
+    @Override
+    public Object exceptionCallback(IdempotentParamWrapper param, IdempotentScenario scenario, Object[] arguments, Throwable throwable) throws Throwable {
+        try {
+            switch (scenario) {
+                case MQ:
+                    String argsJson = JacksonUtils.objectToString(arguments);
+                    log.error("[{}] Consume error. Mode: [{}]. Arguments: [{}].",
+                        param, param.getConsumeMode(), argsJson, throwable);
+                    try (Connection connection = dataSource.getConnection()) {
+                        boolean autoCommit = connection.getAutoCommit();
+                        connection.setAutoCommit(false);
+                        try (PreparedStatement preparedStatement = connection.prepareStatement(SAVE_LOG_SQL)) {
+                            preparedStatement.setString(1, param.getNamespace());
+                            preparedStatement.setString(2, param.getPrefix());
+                            preparedStatement.setString(3, param.getKey());
+                            preparedStatement.setString(4, param.getConsumeMode().name());
+                            preparedStatement.setObject(5, argsJson);
+                            String message = throwable.getMessage();
+                            if (message.length() > 1000) {
+                                message = message.substring(0, 1000);
+                            }
+                            preparedStatement.setString(6, message);
+                            StringWriter errors = new StringWriter();
+                            throwable.printStackTrace(new PrintWriter(errors));
+                            String stack = errors.toString();
+                            if (stack.length() > 1000) {
+                                stack = stack.substring(0, 1000);
+                            }
+                            preparedStatement.setString(7, stack);
+                            preparedStatement.executeUpdate();
                         }
-                        preparedStatement.setString(6, message);
-                        StringWriter errors = new StringWriter();
-                        throwable.printStackTrace(new PrintWriter(errors));
-                        String stack = errors.toString();
-                        if (stack.length() > 1000) {
-                            stack = stack.substring(0, 1000);
-                        }
-                        preparedStatement.setString(7, stack);
-                        preparedStatement.executeUpdate();
+                        connection.commit();
+                        connection.setAutoCommit(autoCommit);
+                    } catch (SQLException e) {
+                        throw new IdempotentException(e);
                     }
-                    connection.commit();
-                    connection.setAutoCommit(autoCommit);
-                } catch (SQLException e) {
-                    throw new IdempotentException(e);
-                }
-                return null;
-            case REST:
-                throw throwable;
-            default: // unreachable
-                return null;
+                    return null;
+                case REST:
+                    throw throwable;
+                default: // unreachable
+                    return null;
+            }
+        } finally {
+            modifyStatus(param, ConsumeStatus.EXCEPTION);
         }
     }
 

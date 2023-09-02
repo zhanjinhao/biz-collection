@@ -9,7 +9,8 @@ create table t_idempotent_exception_log
     args            text                               null comment '參數',
     exception_msg   text                               null comment '异常信息',
     exception_stack text                               null comment '异常栈',
-    create_time     datetime default CURRENT_TIMESTAMP null comment '创建时间'
+    create_time     datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    if_del          tinyint  default 0                 not null comment '删除标志'
 );
 
 create index t_idempotent_storage_center_fullkey
