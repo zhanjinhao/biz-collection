@@ -46,7 +46,7 @@ public class ModuleServiceImpl implements ModuleService {
         if (moduleManager.moduleCodeExists(module.getModuleCode())) {
             throw new ServiceException("moduleCode已存在：" + module.getModuleCode() + "。");
         }
-        return lockHelper.doLock("module:root", () -> {
+        return lockHelper.lock("module:root", () -> {
             // 特殊处理根目录
             if (Module.PARENT_SQC_OF_ROOT.equals(module.getParentSqc())) {
                 if (moduleManager.sqcExists(0L)) {

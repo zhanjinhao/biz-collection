@@ -65,7 +65,7 @@ public class UserRoleRecordServiceImpl implements UserRoleRecordService {
             throw new ServiceException("用户 [" + userSqc + "] 无角色：[" + roleSqc + "]或无读写权限。");
         }
 
-        return lockHelper.doLock("user:userSqc", () -> {
+        return lockHelper.lock("user:userSqc", () -> {
 
             TransactionAttribute rrAttribute = TransactionAttrBuilder.newRRBuilder().build();
             return transactionHelper.doTransaction(rrAttribute, () -> {
@@ -74,9 +74,9 @@ public class UserRoleRecordServiceImpl implements UserRoleRecordService {
                 UserRoleRecord userRoleRecordFromDb = userRoleRecordManager.queryUserRoleRecordByUserSqc(userSqc);
 
                 UserInfo build = UserInfo.builder()
-                        .userId(user.getUserId())
-                        .username(user.getUserName())
-                        .build();
+                    .userId(user.getUserId())
+                    .username(user.getUserName())
+                    .build();
 
                 UserContext.runWithCustomUser(() -> {
                     // 如果不存在，表示登录

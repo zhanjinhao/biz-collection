@@ -136,7 +136,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService, Initializin
         assertSeckillActive(id);
         String userId = UserContext.getUserId();
 
-        return lockHelper.doLock("系统繁忙，请重试！",
+        return lockHelper.lock("系统繁忙，请重试！",
             SECKILL_WITH_PESSIMISM_LOCK_AND_ONE_PERSON_ONE_ORDER_KEY,
             () -> {
                 if (seckillOrderManager.exists(id, userId)) {
@@ -173,7 +173,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService, Initializin
         assertSeckillActive(id);
         String userId = UserContext.getUserId();
 
-        return lockHelper.doLock(
+        return lockHelper.lock(
             "系统繁忙，请重试！",
             SECKILL_WITH_OPTIMISTIC_LOCK_AND_ONE_PERSON_ONE_ORDER_KEY,
             () -> {
@@ -223,7 +223,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService, Initializin
         assertSeckillActive(id);
         String userId = UserContext.getUserId();
 
-        return lockHelper.doLock(
+        return lockHelper.lock(
             "系统繁忙，请重试！",
             SECKILL_WITH_OPTIMISTIC_LOCK_AND_ONE_PERSON_ONE_ORDER_KEY,
             () -> {

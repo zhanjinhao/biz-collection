@@ -42,7 +42,7 @@ public class UserServiceImpl implements UserService {
         if (userManager.userIdExists(user.getUserId())) {
             throw new ServiceException("用户ID已存在：" + user.getUserId() + "。");
         }
-        return lockHelper.doLock("user:userEmail", () -> {
+        return lockHelper.lock("user:userEmail", () -> {
             if (userManager.userEmailExists(user.getUserEmail())) {
                 throw new ServiceException("邮箱已存在：" + user.getUserEmail() + "。");
             }
@@ -82,7 +82,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public Boolean setStatus(Long sqc, String status) {
         if (!StatusUtils.ON_JOB.equals(status) &&
-                !StatusUtils.RETIRE.equals(status) && !StatusUtils.LEAVE.equals(status)) {
+            !StatusUtils.RETIRE.equals(status) && !StatusUtils.LEAVE.equals(status)) {
             throw new ServiceException("不合法的状态：" + status + "。");
         }
         if (!userManager.sqcExists(sqc)) {

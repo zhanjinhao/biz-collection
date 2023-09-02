@@ -23,66 +23,66 @@ public class LockHelper extends LockAspectSupport {
     /**
      * 最简单的加锁场景，arguments[0] 是 key
      */
-    public <R> R doLock(TSupplier<R> supplier, Object... arguments) {
+    public <R> R lock(TSupplier<R> supplier, Object... arguments) {
         LockedAttr attr = LockedAttr.builder().build();
-        return doLock(attr, supplier, arguments);
+        return lock(attr, supplier, arguments);
     }
 
-    public void doLock(TRunnable runnable, Object... arguments) {
+    public void lock(TRunnable runnable, Object... arguments) {
         LockedAttr attr = LockedAttr.builder().build();
-        doLock(attr, runnable, arguments);
+        lock(attr, runnable, arguments);
     }
 
     /**
      * 较上一个场景，arguments[0] 是 key，prefix可以指定
      */
-    public <R> R doLock(String prefix, TSupplier<R> supplier, Object... arguments) {
+    public <R> R lock(String prefix, TSupplier<R> supplier, Object... arguments) {
         LockedAttr attr = LockedAttr.builder()
             .prefix(prefix).build();
-        return doLock(attr, supplier, arguments);
+        return lock(attr, supplier, arguments);
     }
 
-    public void doLock(String prefix, TRunnable runnable, Object... arguments) {
+    public void lock(String prefix, TRunnable runnable, Object... arguments) {
         LockedAttr attr = LockedAttr.builder()
             .prefix(prefix).build();
-        doLock(attr, runnable, arguments);
+        lock(attr, runnable, arguments);
     }
 
     /**
      * 较上一个场景，arguments[0] 是 key，lockFailedMsg和prefix可以指定
      */
-    public <R> R doLock(String lockFailedMsg, String prefix, TSupplier<R> supplier, Object... arguments) {
+    public <R> R lock(String lockFailedMsg, String prefix, TSupplier<R> supplier, Object... arguments) {
         LockedAttr attr = LockedAttr.builder()
             .prefix(prefix).lockFailedMsg(lockFailedMsg).build();
-        return doLock(attr, supplier, arguments);
+        return lock(attr, supplier, arguments);
     }
 
-    public void doLock(String lockFailedMsg, String prefix, TRunnable runnable, Object... arguments) {
+    public void lock(String lockFailedMsg, String prefix, TRunnable runnable, Object... arguments) {
         LockedAttr attr = LockedAttr.builder()
             .prefix(prefix).lockFailedMsg(lockFailedMsg).build();
-        doLock(attr, runnable, arguments);
+        lock(attr, runnable, arguments);
     }
 
     /**
      * 较上一个场景，arguments[0] 是 key，rejectServiceException和lockFailedMsg和prefix可以指定
      */
-    public <R> R doLock(boolean rejectServiceException, String lockFailedMsg, String prefix, TSupplier<R> supplier, Object... arguments) {
+    public <R> R lock(boolean rejectServiceException, String lockFailedMsg, String prefix, TSupplier<R> supplier, Object... arguments) {
         LockedAttr attr = LockedAttr.builder()
             .rejectServiceException(rejectServiceException).prefix(prefix).lockFailedMsg(lockFailedMsg).build();
-        return doLock(attr, supplier, arguments);
+        return lock(attr, supplier, arguments);
     }
 
-    public void doLock(boolean rejectServiceException, String lockFailedMsg, String prefix, TRunnable runnable, Object... arguments) {
+    public void lock(boolean rejectServiceException, String lockFailedMsg, String prefix, TRunnable runnable, Object... arguments) {
         LockedAttr attr = LockedAttr.builder()
             .rejectServiceException(rejectServiceException).prefix(prefix).lockFailedMsg(lockFailedMsg).build();
-        doLock(attr, runnable, arguments);
+        lock(attr, runnable, arguments);
     }
 
-    public void doLock(LockedAttr attr, TRunnable runnable, Object... arguments) {
-        doLock(attr, runnable.toTSupplier(), arguments);
+    public void lock(LockedAttr attr, TRunnable runnable, Object... arguments) {
+        lock(attr, runnable.toTSupplier(), arguments);
     }
 
-    public <R> R doLock(LockedAttr attr, TSupplier<R> supplier, Object... arguments) {
+    public <R> R lock(LockedAttr attr, TSupplier<R> supplier, Object... arguments) {
         if (arguments == null || arguments.length == 0 || attr == null || supplier == null) {
             throw new LockException("参数不能为空！");
         }

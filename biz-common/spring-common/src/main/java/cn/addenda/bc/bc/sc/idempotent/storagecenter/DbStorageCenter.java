@@ -81,7 +81,7 @@ public class DbStorageCenter implements StorageCenter {
 
     @Override
     public boolean saveIfAbsent(IdempotentParamWrapper paramWrapper, ConsumeStatus consumeStatus) {
-        return lockHelper.doLock(() -> {
+        return lockHelper.lock(() -> {
             ConsumeStatus oldConsumeStatus = doGet(paramWrapper, true);
             if (oldConsumeStatus == null) {
                 try (Connection connection = dataSource.getConnection()) {

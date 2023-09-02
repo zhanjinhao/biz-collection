@@ -55,33 +55,33 @@ public class UserRoleServiceImpl implements UserRoleService {
             throw new ServiceException("userSqc不存在：" + userSqc + "。");
         }
 
-        return lockHelper.doLock("user:userSqc", () -> {
+        return lockHelper.lock("user:userSqc", () -> {
             TransactionAttribute rrAttribute = TransactionAttrBuilder.newRRBuilder().build();
             return transactionHelper.doTransaction(rrAttribute, () -> {
                 // 从数据库查出来用户已经有的角色
                 List<UserRole> userRoleListFromDb = userRoleManager.queryRoleOfUser(userSqc);
 
                 List<Long> roleSqcListFromDb = userRoleListFromDb
-                        .stream()
-                        .map(UserRole::getRoleSqc)
-                        .collect(Collectors.toList());
+                    .stream()
+                    .map(UserRole::getRoleSqc)
+                    .collect(Collectors.toList());
                 Ternary<List<Long>, List<Long>, List<Long>> separate =
-                        IterableUtils.separate(roleSqcListFromDb, roleSqcList);
+                    IterableUtils.separate(roleSqcListFromDb, roleSqcList);
 
                 // 数据库有参数没有，需要删除
                 List<Long> deleteList = new ArrayList<>();
                 for (Long roleSqc : separate.getF1()) {
                     Map<Long, Long> userRoleMapFromDb = userRoleListFromDb
-                            .stream()
-                            .collect(Collectors.toMap(UserRole::getRoleSqc, UserRole::getSqc));
+                        .stream()
+                        .collect(Collectors.toMap(UserRole::getRoleSqc, UserRole::getSqc));
                     deleteList.add(userRoleMapFromDb.get(roleSqc));
                 }
 
                 // 参数有数据库没有，需要增加
                 List<UserRole> insertList = separate.getF3()
-                        .stream()
-                        .map(item -> new UserRole(userSqc, item, Module.AT_WRITE, ruleManager.defaultRuleSqcList()))
-                        .collect(Collectors.toList());
+                    .stream()
+                    .map(item -> new UserRole(userSqc, item, Module.AT_WRITE, ruleManager.defaultRuleSqcList()))
+                    .collect(Collectors.toList());
 
                 userRoleManager.batchDeleteBySqc(deleteList);
                 userRoleManager.batchInsert(insertList);
@@ -95,7 +95,7 @@ public class UserRoleServiceImpl implements UserRoleService {
     public Boolean setPermission(Long sqc, UserRole userRole) {
         String accessType = userRole.getAccessType();
         if (!Module.AT_WRITE.equals(accessType) &&
-                !Module.AT_READ.equals(accessType) && !Module.AT_LISTEN.equals(accessType)) {
+            !Module.AT_READ.equals(accessType) && !Module.AT_LISTEN.equals(accessType)) {
             throw new ServiceException("不合法的进入权限：" + accessType + "。");
         }
 
