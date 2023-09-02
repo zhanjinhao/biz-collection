@@ -37,4 +37,9 @@ public @interface Locked {
      */
     long waitTime() default LockedAttr.DEFAULT_WAIT_TIME;
 
+    /**
+     * {@link LockedAttr#isRejectServiceException()}
+     */
+    boolean rejectServiceException() default LockedAttr.DEFAULT_REJECT_SERVICE_EXCEPTION;
+
 }

@@ -3,12 +3,15 @@ package cn.addenda.bc.bc.sc.lock;
 import cn.addenda.bc.bc.ServiceException;
 import cn.addenda.bc.bc.jc.allocator.lock.LockAllocator;
 import cn.addenda.bc.bc.jc.function.TSupplier;
+import cn.addenda.bc.bc.jc.util.TimeUnitUtils;
+import cn.addenda.bc.bc.sc.springcontext.ValueResolverHelper;
 import cn.addenda.bc.bc.sc.util.SpELUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Method;
+import java.util.Properties;
 import java.util.concurrent.locks.Lock;
 
 /**
@@ -69,7 +72,23 @@ public class LockAspectSupport {
                     log.debug("锁 [{}] 释放成功。", lockedKey);
                 }
             } else {
-                throw new ServiceException(lockedAttr.getLockFailedMsg().replace("{}", lockedKey));
+                String lockFailedMsg = lockedAttr.getLockFailedMsg();
+                Properties properties = new Properties();
+                properties.put("prefix", lockedAttr.getPrefix());
+                properties.put("spEL", lockedAttr.getSpEL());
+                properties.put("timeUnit", lockedAttr.getTimeUnit());
+                properties.put("waitTime", lockedAttr.getWaitTime());
+                properties.put("waitTimeStr", lockedAttr.getWaitTime() + " " + TimeUnitUtils.convertTimeUnit(lockedAttr.getTimeUnit()));
+                properties.put("rejectServiceException", lockedAttr.isRejectServiceException());
+                properties.put("key", key);
+                properties.put("simpleKey", lockedAttr.getPrefix() + ":" + key);
+                properties.put("fullKey", lockedKey);
+                String msg = ValueResolverHelper.resolveDollarPlaceholder(lockFailedMsg, properties);
+                if (lockedAttr.isRejectServiceException()) {
+                    throw new LockException(msg);
+                } else {
+                    throw new ServiceException(msg);
+                }
             }
         } catch (InterruptedException interruptedException) {
             Thread.currentThread().interrupt();

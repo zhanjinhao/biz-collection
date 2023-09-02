@@ -37,12 +37,14 @@ public class LockHelper extends LockAspectSupport {
      * 较上一个场景，arguments[0] 是 key，prefix可以指定
      */
     public <R> R doLock(String prefix, TSupplier<R> supplier, Object... arguments) {
-        LockedAttr attr = LockedAttr.builder().prefix(prefix).build();
+        LockedAttr attr = LockedAttr.builder()
+            .prefix(prefix).build();
         return doLock(attr, supplier, arguments);
     }
 
     public void doLock(String prefix, TRunnable runnable, Object... arguments) {
-        LockedAttr attr = LockedAttr.builder().prefix(prefix).build();
+        LockedAttr attr = LockedAttr.builder()
+            .prefix(prefix).build();
         doLock(attr, runnable, arguments);
     }
 
@@ -50,12 +52,29 @@ public class LockHelper extends LockAspectSupport {
      * 较上一个场景，arguments[0] 是 key，lockFailedMsg和prefix可以指定
      */
     public <R> R doLock(String lockFailedMsg, String prefix, TSupplier<R> supplier, Object... arguments) {
-        LockedAttr attr = LockedAttr.builder().prefix(prefix).lockFailedMsg(lockFailedMsg).build();
+        LockedAttr attr = LockedAttr.builder()
+            .prefix(prefix).lockFailedMsg(lockFailedMsg).build();
         return doLock(attr, supplier, arguments);
     }
 
     public void doLock(String lockFailedMsg, String prefix, TRunnable runnable, Object... arguments) {
-        LockedAttr attr = LockedAttr.builder().prefix(prefix).lockFailedMsg(lockFailedMsg).build();
+        LockedAttr attr = LockedAttr.builder()
+            .prefix(prefix).lockFailedMsg(lockFailedMsg).build();
+        doLock(attr, runnable, arguments);
+    }
+
+    /**
+     * 较上一个场景，arguments[0] 是 key，rejectServiceException和lockFailedMsg和prefix可以指定
+     */
+    public <R> R doLock(boolean rejectServiceException, String lockFailedMsg, String prefix, TSupplier<R> supplier, Object... arguments) {
+        LockedAttr attr = LockedAttr.builder()
+            .rejectServiceException(rejectServiceException).prefix(prefix).lockFailedMsg(lockFailedMsg).build();
+        return doLock(attr, supplier, arguments);
+    }
+
+    public void doLock(boolean rejectServiceException, String lockFailedMsg, String prefix, TRunnable runnable, Object... arguments) {
+        LockedAttr attr = LockedAttr.builder()
+            .rejectServiceException(rejectServiceException).prefix(prefix).lockFailedMsg(lockFailedMsg).build();
         doLock(attr, runnable, arguments);
     }
 

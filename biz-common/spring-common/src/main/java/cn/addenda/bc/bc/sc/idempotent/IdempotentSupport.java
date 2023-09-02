@@ -220,7 +220,7 @@ public class IdempotentSupport implements EnvironmentAware, InitializingBean, Ap
                 properties.put("key", param.getKey());
                 properties.put("simpleKey", param.getSimpleKey());
                 properties.put("fullKey", param.getFullKey());
-                throw new ServiceException(ValueResolverHelper.resolveHashPlaceholder(repeatConsumptionMsg, properties));
+                throw new ServiceException(ValueResolverHelper.resolveDollarPlaceholder(repeatConsumptionMsg, properties));
             default: // unreachable
                 return null;
         }

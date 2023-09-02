@@ -27,12 +27,13 @@ public class LockMethodInterceptor extends LockAspectSupport implements MethodIn
         }
 
         LockedAttr attribute = LockedAttr.builder()
-                .spEL(locked.spEL())
-                .lockFailedMsg(locked.lockFailedMsg())
-                .prefix(locked.prefix())
-                .timeUnit(locked.timeUnit())
-                .waitTime(locked.waitTime())
-                .build();
+            .spEL(locked.spEL())
+            .lockFailedMsg(locked.lockFailedMsg())
+            .prefix(locked.prefix())
+            .timeUnit(locked.timeUnit())
+            .waitTime(locked.waitTime())
+            .rejectServiceException(locked.rejectServiceException())
+            .build();
 
         try {
             return invokeWithinLock(attribute, invocation.getArguments(), invocation::proceed, invocation.getMethod());

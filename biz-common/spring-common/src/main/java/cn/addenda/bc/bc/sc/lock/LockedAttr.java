@@ -17,11 +17,14 @@ import java.util.concurrent.TimeUnit;
 public class LockedAttr {
 
     public static final String DEFAULT_PREFIX = "prefix";
-    public static final String DEFAULT_LOCK_FAILED_MSG = "数据 [{}] 繁忙，请重试！";
+
+    public static final String DEFAULT_LOCK_FAILED_MSG = "数据 [${key}] 繁忙，请重试！";
 
     public static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.MILLISECONDS;
 
     public static final long DEFAULT_WAIT_TIME = 500L;
+
+    public static final boolean DEFAULT_REJECT_SERVICE_EXCEPTION = false;
 
     @Builder.Default
     private String prefix = DEFAULT_PREFIX;
@@ -39,5 +42,8 @@ public class LockedAttr {
      */
     @Builder.Default
     private long waitTime = DEFAULT_WAIT_TIME;
+
+    @Builder.Default
+    private boolean rejectServiceException = DEFAULT_REJECT_SERVICE_EXCEPTION;
 
 }
