@@ -26,7 +26,7 @@ public class IdempotentParamWrapper {
     private int timeoutSecs;
 
     public String getFullKey() {
-        return namespace + ":" + prefix + ":" + key + ":" + consumeMode;
+        return namespace + ":" + prefix + ":" + key;
     }
 
     public String getSimpleKey() {

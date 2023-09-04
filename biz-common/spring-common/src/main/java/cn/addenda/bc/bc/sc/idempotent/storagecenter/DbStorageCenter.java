@@ -77,7 +77,7 @@ public class DbStorageCenter implements StorageCenter {
 
     private static final String SAVE_SQL =
         "insert into t_idempotent_storage_center "
-            + "set `namespace` = ?, `prefix` = ?, `key` = ?, `consume_mode` = ?, `expire_time` = ?, `consume_status` = ?, `if_del` = ?";
+            + "set `namespace` = ?, `prefix` = ?, `key` = ?, `consume_mode` = ?, `expire_time` = ?, `consume_status` = ?, `if_del` = 0";
 
     @Override
     public boolean saveIfAbsent(IdempotentParamWrapper paramWrapper, ConsumeStatus consumeStatus) {
@@ -133,8 +133,10 @@ public class DbStorageCenter implements StorageCenter {
     }
 
     private static final String DELETE_SQL =
-        "update t_idempotent_storage_center "
-            + "set if_del = 1 where `namespace` = ? and `prefix` = ? and `key` = ? and `consume_mode` = ? and `if_del` = 0";
+        "update t_idempotent_storage_center A inner join ("
+            + "select id from t_idempotent_storage_center "
+            + "where `namespace` = ? and `prefix` = ? and `key` = ? and `consume_mode` = ? and `if_del` = 0 order by id desc limit 1) B on B.id = A.id "
+            + "set A.`if_del` = 1, A.`consume_status` = 'EXCEPTION'";
 
     @Override
     public void delete(IdempotentParamWrapper paramWrapper) {
