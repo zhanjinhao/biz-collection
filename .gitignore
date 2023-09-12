@@ -35,3 +35,4 @@ dependency-reduced-pom.xml
 db.properties
 
 /pom.xml
+/biz-common/redis-common/src/test/resources/cn/addenda/bc/bc/rc/redis.properties

@@ -1,7 +1,7 @@
 package cn.addenda.bc.bc.rc.cache;
 
 import cn.addenda.bc.bc.jc.allocator.lock.LockAllocator;
-import cn.addenda.bc.bc.jc.allocator.trafficlimit.TrafficLimiterAllocator;
+import cn.addenda.bc.bc.jc.allocator.ratelimiter.RateLimiterAllocator;
 import cn.addenda.bc.bc.jc.cache.CacheHelper;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
@@ -17,8 +17,8 @@ public class RedisCacheHelper extends CacheHelper {
     private final StringRedisTemplate stringRedisTemplate;
 
     public RedisCacheHelper(StringRedisTemplate stringRedisTemplate, long ppfExpirationDetectionInterval, LockAllocator<?> lockAllocator,
-                            ExecutorService cacheBuildEs, TrafficLimiterAllocator<?> realQueryTrafficLimiterAllocator, boolean useServiceException) {
-        super(new RedisKVCache(stringRedisTemplate), ppfExpirationDetectionInterval, lockAllocator, cacheBuildEs, realQueryTrafficLimiterAllocator, useServiceException);
+                            ExecutorService cacheBuildEs, RateLimiterAllocator<?> realQueryRateLimiterAllocator, boolean useServiceException) {
+        super(new RedisKVCache(stringRedisTemplate), ppfExpirationDetectionInterval, lockAllocator, cacheBuildEs, realQueryRateLimiterAllocator, useServiceException);
         this.stringRedisTemplate = stringRedisTemplate;
     }
 

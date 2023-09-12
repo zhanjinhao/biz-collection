@@ -3,11 +3,11 @@ package cn.addenda.bc.bc.jc.cache;
 import cn.addenda.bc.bc.ServiceException;
 import cn.addenda.bc.bc.jc.allocator.lock.LockAllocator;
 import cn.addenda.bc.bc.jc.allocator.lock.ReentrantLockAllocator;
-import cn.addenda.bc.bc.jc.allocator.trafficlimit.TokenBucketTrafficLimiterAllocator;
-import cn.addenda.bc.bc.jc.allocator.trafficlimit.TrafficLimiterAllocator;
+import cn.addenda.bc.bc.jc.allocator.ratelimiter.RateLimiterAllocator;
+import cn.addenda.bc.bc.jc.allocator.ratelimiter.TokenBucketRateLimiterAllocator;
 import cn.addenda.bc.bc.jc.concurrent.SimpleNamedThreadFactory;
-import cn.addenda.bc.bc.jc.trafficlimit.RequestIntervalTrafficLimiter;
-import cn.addenda.bc.bc.jc.trafficlimit.TrafficLimiter;
+import cn.addenda.bc.bc.jc.ratelimiter.RateLimiter;
+import cn.addenda.bc.bc.jc.ratelimiter.RequestIntervalRateLimiter;
 import cn.addenda.bc.bc.jc.util.DateUtils;
 import cn.addenda.bc.bc.jc.util.JacksonUtils;
 import cn.addenda.bc.bc.jc.util.SleepUtils;
@@ -85,7 +85,7 @@ public class CacheHelper {
     /**
      * key是prefix
      */
-    private final Map<String, RequestIntervalTrafficLimiter> trafficLimiterMap = new ConcurrentHashMap<>();
+    private final Map<String, RequestIntervalRateLimiter> rateLimiterMap = new ConcurrentHashMap<>();
 
     /**
      * 锁的管理器，防止查询相同数据的多个线程拿到不同的锁，导致加锁失败
@@ -95,7 +95,7 @@ public class CacheHelper {
     /**
      * rdf模式下，查询数据库的限流器，解决缓存击穿问题
      */
-    private final TrafficLimiterAllocator<?> realQueryTrafficLimiterAllocator;
+    private final RateLimiterAllocator<?> realQueryRateLimiterAllocator;
 
     /**
      * 缓存异步构建使用的线程池
@@ -120,12 +120,12 @@ public class CacheHelper {
     public static final long DEFAULT_PPF_EXPIRATION_DETECTION_INTERVAL = 100L;
 
     public CacheHelper(KVCache<String, String> kvCache, long ppfExpirationDetectionInterval, LockAllocator<?> lockAllocator,
-                       ExecutorService cacheBuildEs, TrafficLimiterAllocator<?> realQueryTrafficLimiterAllocator, boolean useServiceException) {
+                       ExecutorService cacheBuildEs, RateLimiterAllocator<?> realQueryRateLimiterAllocator, boolean useServiceException) {
         this.kvCache = kvCache;
         this.ppfExpirationDetectionInterval = ppfExpirationDetectionInterval;
         this.lockAllocator = lockAllocator;
         this.cacheBuildEs = cacheBuildEs;
-        this.realQueryTrafficLimiterAllocator = realQueryTrafficLimiterAllocator;
+        this.realQueryRateLimiterAllocator = realQueryRateLimiterAllocator;
         this.useServiceException = useServiceException;
     }
 
@@ -134,7 +134,7 @@ public class CacheHelper {
         this.ppfExpirationDetectionInterval = ppfExpirationDetectionInterval;
         this.lockAllocator = lockAllocator;
         this.cacheBuildEs = defaultCacheBuildEs();
-        this.realQueryTrafficLimiterAllocator = new TokenBucketTrafficLimiterAllocator(10, 10);
+        this.realQueryRateLimiterAllocator = new TokenBucketRateLimiterAllocator(10, 10);
         this.useServiceException = false;
     }
 
@@ -143,7 +143,7 @@ public class CacheHelper {
         this.ppfExpirationDetectionInterval = ppfExpirationDetectionInterval;
         this.lockAllocator = new ReentrantLockAllocator();
         this.cacheBuildEs = defaultCacheBuildEs();
-        this.realQueryTrafficLimiterAllocator = new TokenBucketTrafficLimiterAllocator(10, 10);
+        this.realQueryRateLimiterAllocator = new TokenBucketRateLimiterAllocator(10, 10);
         this.useServiceException = false;
     }
 
@@ -152,7 +152,7 @@ public class CacheHelper {
         this.ppfExpirationDetectionInterval = DEFAULT_PPF_EXPIRATION_DETECTION_INTERVAL;
         this.lockAllocator = new ReentrantLockAllocator();
         this.cacheBuildEs = defaultCacheBuildEs();
-        this.realQueryTrafficLimiterAllocator = new TokenBucketTrafficLimiterAllocator(10, 10);
+        this.realQueryRateLimiterAllocator = new TokenBucketRateLimiterAllocator(10, 10);
         this.useServiceException = false;
     }
 
@@ -304,9 +304,9 @@ public class CacheHelper {
 
                     // 如果过期了，输出告警信息。
                     // 使用限流器防止高并发下大量打印日志。
-                    RequestIntervalTrafficLimiter trafficLimiter = trafficLimiterMap.computeIfAbsent(
-                        keyPrefix + PERFORMANCE_FIRST_PREFIX, s -> new RequestIntervalTrafficLimiter(ppfExpirationDetectionInterval));
-                    if (trafficLimiter.acquire()) {
+                    RequestIntervalRateLimiter rateLimiter = rateLimiterMap.computeIfAbsent(
+                        keyPrefix + PERFORMANCE_FIRST_PREFIX, s -> new RequestIntervalRateLimiter(ppfExpirationDetectionInterval));
+                    if (rateLimiter.tryAcquire()) {
                         log.error(EXPIRED_MSG, key, data);
                     }
                 }
@@ -482,15 +482,15 @@ public class CacheHelper {
             };
 
             String lockKey = getLockKey(key);
-            TrafficLimiter trafficLimiter = realQueryTrafficLimiterAllocator.allocate(lockKey);
-            if (trafficLimiter.acquire()) {
+            RateLimiter rateLimiter = realQueryRateLimiterAllocator.allocate(lockKey);
+            if (rateLimiter.tryAcquire()) {
                 try {
                     return supplier.get();
                 } finally {
-                    realQueryTrafficLimiterAllocator.release(lockKey);
+                    realQueryRateLimiterAllocator.release(lockKey);
                 }
             } else {
-                realQueryTrafficLimiterAllocator.release(lockKey);
+                realQueryRateLimiterAllocator.release(lockKey);
 
                 // 4.1获取互斥锁，获取到进行缓存构建
                 Lock lock = lockAllocator.allocate(lockKey);

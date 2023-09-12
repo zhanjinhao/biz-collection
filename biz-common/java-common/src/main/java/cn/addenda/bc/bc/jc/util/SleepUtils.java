@@ -21,6 +21,9 @@ public class SleepUtils {
     public static void sleep(TimeUnit timeUnit, long timeout, boolean eatInterruptedFg) {
         long start = System.currentTimeMillis();
         long timeoutMillis = timeUnit.toMillis(timeout);
+        if (timeoutMillis == 0) {
+            return;
+        }
         long duration = 0;
         boolean interruptedFg = false;
         while (true) {
@@ -32,7 +35,7 @@ public class SleepUtils {
                 Thread.sleep(delay);
             } catch (InterruptedException e) {
                 log.debug("睡眠期间被打断，本次睡眠 [{}ms]，总睡眠 [{}ms]，期望睡眠 [{}ms]。",
-                        delay - (timeoutMillis - (System.currentTimeMillis() - start)), System.currentTimeMillis() - start, timeoutMillis);
+                    delay - (timeoutMillis - (System.currentTimeMillis() - start)), System.currentTimeMillis() - start, timeoutMillis);
                 interruptedFg = true;
             }
             duration = System.currentTimeMillis() - start;
