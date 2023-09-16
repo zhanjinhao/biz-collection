@@ -1,4 +1,4 @@
-package cn.addenda.bc.bc.jc.cache;
+package cn.addenda.bc.bc.jc.cache.elimination;
 
 /**
  * LRU实现中用于存储新旧关系的双向链表

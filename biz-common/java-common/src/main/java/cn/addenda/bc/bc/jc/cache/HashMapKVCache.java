@@ -1,8 +1,11 @@
 package cn.addenda.bc.bc.jc.cache;
 
+import cn.addenda.bc.bc.jc.pojo.Binary;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /**
  * 基于HashMap实现的KVCache
@@ -12,16 +15,17 @@ import java.util.concurrent.TimeUnit;
  */
 public class HashMapKVCache<K, V> implements KVCache<K, V> {
 
-    private final Map<K, V> map = new HashMap<>();
+    private final Map<K, Binary<V, Long>> map = new HashMap<>();
 
     @Override
     public void set(K k, V v) {
-        map.put(k, v);
+        map.put(k, new Binary<>(v, Long.MAX_VALUE));
     }
 
     @Override
     public void set(K k, V v, long timeout, TimeUnit timeunit) {
-        throw new UnsupportedOperationException();
+        long timeoutMills = timeunit.toMillis(timeout);
+        map.put(k, new Binary<>(v, System.currentTimeMillis() + timeoutMills));
     }
 
     @Override
@@ -31,7 +35,12 @@ public class HashMapKVCache<K, V> implements KVCache<K, V> {
 
     @Override
     public V get(K k) {
-        return map.get(k);
+        Binary<V, Long> binary = map.get(k);
+        if (binary.getF2() > System.currentTimeMillis()) {
+            map.remove(k);
+            return null;
+        }
+        return binary.getF1();
     }
 
     @Override
@@ -46,7 +55,22 @@ public class HashMapKVCache<K, V> implements KVCache<K, V> {
 
     @Override
     public long capacity() {
-        return Integer.MAX_VALUE;
+        return 1 << 30;
+    }
+
+    @Override
+    public V remove(K k) {
+        Binary<V, Long> remove = map.remove(k);
+        if (remove != null) {
+            return remove.getF1();
+        }
+        return null;
+    }
+
+    @Override
+    public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+        V apply = mappingFunction.apply(key);
+        return map.computeIfAbsent(key, k -> new Binary<>(apply, System.currentTimeMillis())).getF1();
     }
 
 }

@@ -1,4 +1,7 @@
-package cn.addenda.bc.bc.jc.cache;
+package cn.addenda.bc.bc.jc.cache.elimination;
+
+import cn.addenda.bc.bc.jc.cache.KVCache;
+import cn.addenda.bc.bc.jc.cache.KVCacheWrapper;
 
 import java.util.concurrent.TimeUnit;
 
@@ -37,7 +40,7 @@ public abstract class EliminableKVCache<K, V> extends KVCacheWrapper<K, V> {
 
     @Override
     public void set(K k, V v, long timeout, TimeUnit timeunit) {
-        throw new UnsupportedOperationException("EliminableKVCache不支持缓存过期！");
+        throw new UnsupportedOperationException("EliminableKVCache不支持缓存自动过期！");
 //        if (containsKey(k)) {
 //            setWhenContainsKey(k, v, timeout, timeunit);
 //            return;

@@ -1,8 +1,13 @@
-package cn.addenda.bc.bc.jc.cache;
+package cn.addenda.bc.bc.jc.cache.elimination;
 
+import cn.addenda.bc.bc.jc.cache.HashMapKVCache;
+import cn.addenda.bc.bc.jc.cache.KVCache;
+import cn.addenda.bc.bc.jc.cache.SortedKVCache;
+import cn.addenda.bc.bc.jc.cache.SortedMapKVCache;
 import lombok.Getter;
 
 import java.util.LinkedHashSet;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -26,7 +31,7 @@ public class LfuKVCache<K, V> extends EliminableKVCache<K, V> {
     public LfuKVCache(long capacity, KVCache<K, V> kvCacheDelegate) {
         super(capacity, kvCacheDelegate);
         this.keyToVisitorCount = new HashMapKVCache<>();
-        this.visitorCountToKeySet = new TreeMapKVCache<>();
+        this.visitorCountToKeySet = new SortedMapKVCache<>(new TreeMap<>());
     }
 
     public LfuKVCache(KVCache<K, Long> keyToVisitorCount,
@@ -73,7 +78,7 @@ public class LfuKVCache<K, V> extends EliminableKVCache<K, V> {
 
     private void removeMinOldest() {
         Long minVisitorCount =
-                visitorCountToKeySet.size() == 0L ? 0L : visitorCountToKeySet.getFirst();
+            visitorCountToKeySet.size() == 0L ? 0L : visitorCountToKeySet.getFirst();
 
         LinkedHashSet<K> keyList = visitorCountToKeySet.get(minVisitorCount);
         K oldest = keyList.iterator().next();

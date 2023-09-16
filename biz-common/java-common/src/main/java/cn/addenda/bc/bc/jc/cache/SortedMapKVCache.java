@@ -8,11 +8,11 @@ import java.util.concurrent.TimeUnit;
  * @author addenda
  * @since 2023/05/30
  */
-public abstract class SortedMapKVCache<K, V> implements SortedKVCache<K, V> {
+public class SortedMapKVCache<K, V> implements SortedKVCache<K, V> {
 
     private final SortedMap<K, V> sortedMap;
 
-    protected SortedMapKVCache(SortedMap<K, V> sortedMap) {
+    public SortedMapKVCache(SortedMap<K, V> sortedMap) {
         this.sortedMap = sortedMap;
     }
 

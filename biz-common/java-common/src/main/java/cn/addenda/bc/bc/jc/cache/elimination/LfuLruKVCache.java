@@ -1,4 +1,8 @@
-package cn.addenda.bc.bc.jc.cache;
+package cn.addenda.bc.bc.jc.cache.elimination;
+
+import cn.addenda.bc.bc.jc.cache.HashMapKVCache;
+import cn.addenda.bc.bc.jc.cache.KVCache;
+import cn.addenda.bc.bc.jc.cache.SortedKVCache;
 
 import java.util.LinkedHashSet;
 
