@@ -10,11 +10,11 @@ import java.util.concurrent.TimeUnit;
  * @author addenda
  * @since 2023/9/8 20:38
  */
-public class RedissonRateLimiterWrapper implements MultiPermitsRateLimiter {
+public class RRateLimiterWrapper implements MultiPermitsRateLimiter {
 
     private final RRateLimiter rateLimiter;
 
-    public RedissonRateLimiterWrapper(RRateLimiter rateLimiter) {
+    public RRateLimiterWrapper(RRateLimiter rateLimiter) {
         this.rateLimiter = rateLimiter;
     }
 

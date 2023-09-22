@@ -3,7 +3,7 @@ package cn.addenda.bc.bc.jc.allocator.lock;
 import cn.addenda.bc.bc.jc.allocator.ReferenceCountAllocator;
 
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 /**
  * @author addenda
@@ -12,7 +12,12 @@ import java.util.function.Supplier;
 public class ReentrantLockAllocator extends ReferenceCountAllocator<ReentrantLock> implements LockAllocator<ReentrantLock> {
 
     @Override
-    protected Supplier<ReentrantLock> referenceSupplier() {
-        return ReentrantLock::new;
+    protected Function<String, ReentrantLock> referenceFunction() {
+        return new Function<String, ReentrantLock>() {
+            @Override
+            public ReentrantLock apply(String s) {
+                return new ReentrantLock();
+            }
+        };
     }
 }

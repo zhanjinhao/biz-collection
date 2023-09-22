@@ -1,6 +1,6 @@
 package cn.addenda.bc.bc.sc.lock;
 
-import cn.addenda.bc.bc.rc.lockallocator.RedissonLockAllocator;
+import cn.addenda.bc.bc.rc.allocator.RedissonLockAllocator;
 
 /**
  * @author addenda

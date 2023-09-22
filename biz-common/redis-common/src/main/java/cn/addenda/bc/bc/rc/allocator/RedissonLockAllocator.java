@@ -1,4 +1,4 @@
-package cn.addenda.bc.bc.rc.lockallocator;
+package cn.addenda.bc.bc.rc.allocator;
 
 import cn.addenda.bc.bc.jc.allocator.lock.LockAllocator;
 import org.redisson.api.RLock;

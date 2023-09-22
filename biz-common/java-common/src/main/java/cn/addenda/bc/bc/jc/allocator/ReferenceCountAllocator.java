@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 /**
  * @author addenda
@@ -42,7 +42,7 @@ public abstract class ReferenceCountAllocator<T> implements Allocator<T> {
         lock.lock();
         try {
             Binary<T, AtomicInteger> binary = map
-                .computeIfAbsent(name, s -> new Binary<>(referenceSupplier().get(), new AtomicInteger(0)));
+                .computeIfAbsent(name, s -> new Binary<>(referenceFunction().apply(name), new AtomicInteger(0)));
             binary.getF2().getAndIncrement();
             return binary.getF1();
         } finally {
@@ -72,6 +72,6 @@ public abstract class ReferenceCountAllocator<T> implements Allocator<T> {
         }
     }
 
-    protected abstract Supplier<T> referenceSupplier();
+    protected abstract Function<String, T> referenceFunction();
 
 }

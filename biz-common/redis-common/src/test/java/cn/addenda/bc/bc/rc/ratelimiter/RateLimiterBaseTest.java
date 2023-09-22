@@ -1,4 +1,4 @@
-package cn.addenda.bc.bc.rc;
+package cn.addenda.bc.bc.rc.ratelimiter;
 
 import cn.addenda.bc.bc.jc.ratelimiter.RateLimiter;
 import cn.addenda.bc.bc.jc.util.SleepUtils;

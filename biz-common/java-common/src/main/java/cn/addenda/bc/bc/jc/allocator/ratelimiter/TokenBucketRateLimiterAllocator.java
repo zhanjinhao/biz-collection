@@ -3,7 +3,7 @@ package cn.addenda.bc.bc.jc.allocator.ratelimiter;
 import cn.addenda.bc.bc.jc.allocator.ReferenceCountAllocator;
 import cn.addenda.bc.bc.jc.ratelimiter.TokenBucketRateLimiter;
 
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 /**
  * @author addenda
@@ -27,8 +27,12 @@ public class TokenBucketRateLimiterAllocator extends ReferenceCountAllocator<Tok
     }
 
     @Override
-    protected Supplier<TokenBucketRateLimiter> referenceSupplier() {
-        return () -> new TokenBucketRateLimiter(capacity, permitsPerSecond);
+    protected Function<String, TokenBucketRateLimiter> referenceFunction() {
+        return new Function<String, TokenBucketRateLimiter>() {
+            @Override
+            public TokenBucketRateLimiter apply(String s) {
+                return new TokenBucketRateLimiter(capacity, permitsPerSecond);
+            }
+        };
     }
-
 }
