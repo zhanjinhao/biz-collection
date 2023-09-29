@@ -21,7 +21,7 @@ public class RedisCacheConfig {
                                              @Qualifier("reentrantLockAllocator") LockAllocator<ReentrantLock> lockAllocator) {
         RedisCacheHelper redisCacheHelper = new RedisCacheHelper(stringRedisTemplate, 1000, lockAllocator);
         redisCacheHelper.setRdfBusyLoop(5);
-        redisCacheHelper.setLockWaitTime(100);
+        redisCacheHelper.setLockWaitTime(1000);
         return redisCacheHelper;
     }
 

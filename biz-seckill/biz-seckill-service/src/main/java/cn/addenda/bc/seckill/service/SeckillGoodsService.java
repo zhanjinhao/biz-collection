@@ -26,6 +26,10 @@ public interface SeckillGoodsService {
 
     Boolean seckillWithRedisLua(Long id);
 
+    Boolean seckillWithTokenAndRateLimitation(Long id);
+
+    Boolean seckillWithTokenAndRateLimitation2(Long id);
+
     Boolean resetSeckill(String ids, Integer stock);
 
 }

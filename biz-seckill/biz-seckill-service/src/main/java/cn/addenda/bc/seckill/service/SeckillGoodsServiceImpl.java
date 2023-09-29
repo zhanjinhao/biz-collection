@@ -5,7 +5,10 @@ import cn.addenda.bc.bc.jc.pojo.Ternary;
 import cn.addenda.bc.bc.jc.util.DateUtils;
 import cn.addenda.bc.bc.sc.lock.LockHelper;
 import cn.addenda.bc.bc.sc.lock.Locked;
+import cn.addenda.bc.bc.sc.ratelimitation.RateLimitationHelper;
+import cn.addenda.bc.bc.sc.ratelimitation.RateLimited;
 import cn.addenda.bc.bc.sc.transaction.TransactionHelper;
+import cn.addenda.bc.bc.sc.util.SpELUtils;
 import cn.addenda.bc.bc.uc.user.UserContext;
 import cn.addenda.bc.bc.uc.user.UserInfo;
 import cn.addenda.bc.seckill.manager.GoodsManager;
@@ -59,6 +62,9 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService, Initializin
 
     @Autowired
     private LockHelper lockHelper;
+
+    @Autowired
+    private RateLimitationHelper rateLimitationHelper;
 
     private static final ExecutorService SECKILL_ORDER_EXECUTOR = Executors.newSingleThreadExecutor();
 
@@ -261,6 +267,24 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService, Initializin
 
         // 这里应该要投MQ的
         return queue.offer(new Ternary<>(id, userId, UserContext.getUser()));
+    }
+
+    @Override
+    public Boolean seckillWithTokenAndRateLimitation(Long id) {
+        assertSeckillActive(id);
+        String userId = UserContext.getUserId();
+
+        return rateLimitationHelper.rateLimit(
+            "biz-seckill:seckill", () -> doSeckillWithToken(id, userId), userId);
+    }
+
+    @Override
+    @RateLimited(rateLimiterAllocator = "biz-seckill:seckill", spEL = SpELUtils.USER_ID)
+    public Boolean seckillWithTokenAndRateLimitation2(Long id) {
+        assertSeckillActive(id);
+        String userId = UserContext.getUserId();
+
+        return doSeckillWithToken(id, userId);
     }
 
     @Override

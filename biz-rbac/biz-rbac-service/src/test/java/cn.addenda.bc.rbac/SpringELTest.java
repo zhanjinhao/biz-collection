@@ -1,12 +1,19 @@
 package cn.addenda.bc.rbac;
 
+import cn.addenda.bc.bc.sc.util.SpELUtils;
+import cn.addenda.bc.bc.uc.user.UserContext;
+import cn.addenda.bc.bc.uc.user.UserInfo;
 import cn.addenda.bc.rbac.pojo.entity.User;
 import cn.addenda.footprints.core.util.ArrayUtils;
+import org.junit.Test;
+import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -15,7 +22,8 @@ import java.util.Map;
  */
 public class SpringELTest {
 
-    public static void main(String[] args) {
+    @Test
+    public void main() {
         ExpressionParser parser = new SpelExpressionParser();
 
         StandardEvaluationContext strContext = new StandardEvaluationContext(123);
@@ -41,6 +49,24 @@ public class SpringELTest {
         StandardEvaluationContext mapContext = new StandardEvaluationContext(map);
         String mapStr = parser.parseExpression("#this['user1'].userId").getValue(mapContext, String.class);
         System.out.println(mapStr);
+    }
+
+    @Test
+    public void test6() {
+        UserContext.runWithCustomUser(() -> {
+            ExpressionParser parser = new SpelExpressionParser();
+            Expression exp = parser.parseExpression(SpELUtils.USER_ID);
+            List<String> list = new ArrayList<>();
+            list.add("123");
+            StandardEvaluationContext context = new StandardEvaluationContext();
+            context.setVariable("spELArgs", list);
+            System.out.println(exp.getValue(context));
+        }, UserInfo.builder().userId("springeltest").build());
+    }
+
+    @Test
+    public void test7() {
+        System.out.println(SpELUtils.USER_ID.matches("T\\([\\w.]+\\)\\.\\w+\\(\\)"));
     }
 
 }

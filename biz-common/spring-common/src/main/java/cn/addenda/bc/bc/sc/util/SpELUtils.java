@@ -1,6 +1,7 @@
 package cn.addenda.bc.bc.sc.util;
 
 import cn.addenda.bc.bc.jc.util.JacksonUtils;
+import cn.addenda.bc.bc.sc.SpringCommonException;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
@@ -18,6 +19,9 @@ public class SpELUtils {
 
     private SpELUtils() {
     }
+
+    public static final String MD5 = "T(cn.addenda.bc.bc.jc.util.MD5Utils).md5(#spELArgs)";
+    public static final String USER_ID = "T(cn.addenda.bc.bc.uc.user.UserContext).getUserId()";
 
     private static final ExpressionParser SPEL_PARSER = new SpelExpressionParser();
 
@@ -44,15 +48,19 @@ public class SpELUtils {
             spEL = "#" + spELArgsName + "[0]";
         }
 
-        if (spEL.contains("#")) {
+        if (spEL.contains("#") || spEL.matches("T\\([\\w.]+\\)\\.\\w+\\(\\)")) {
             Object value = SpELUtils.getValue(spEL, method, spELArgsName, arguments);
             if (value == null) {
                 String msg = String.format("Cannot get value from arguments: [%s], spEL: [%s].", JacksonUtils.objectToString(arguments), spEL);
-                throw new RuntimeException(msg);
+                throw new SpringCommonException(msg);
             }
             return value.toString();
         }
         return spEL;
+    }
+
+    public static boolean constKey(String spEL) {
+        return StringUtils.hasLength(spEL) && !spEL.contains("#");
     }
 
 }
