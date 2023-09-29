@@ -13,7 +13,7 @@ import java.util.function.Function;
  * @author addenda
  * @since 2023/9/13 21:35
  */
-public abstract class DefaultAutoExpiredAllocator<T> implements AutoExpiredAllocator<T> {
+public abstract class DefaultExpiredAllocator<T> implements ExpiredAllocator<T> {
 
     /**
      * key：名字
@@ -39,6 +39,11 @@ public abstract class DefaultAutoExpiredAllocator<T> implements AutoExpiredAlloc
     }
 
     @Override
+    public T allocateWithDefaultTtl(String name) {
+        return allocate(name, TimeUnit.DAYS, 3650);
+    }
+
+    @Override
     public void release(String name) {
         lock.lock();
         try {
@@ -58,7 +63,7 @@ public abstract class DefaultAutoExpiredAllocator<T> implements AutoExpiredAlloc
     public T allocate(String name, TimeUnit timeUnit, long timeout) {
         lock.lock();
         try {
-            Param param = Param.builder().name(name).timeUnit(timeUnit).timeout(timeout).build();
+            Param param = Param.builder().name(name).timeUnit(timeUnit).ttl(timeout).build();
             T t = referenceFunction().apply(param);
             Long expire = timeUnit.toMillis(timeout) + System.currentTimeMillis();
             map.computeIfAbsent(name, s -> new Binary<>(t, expire));

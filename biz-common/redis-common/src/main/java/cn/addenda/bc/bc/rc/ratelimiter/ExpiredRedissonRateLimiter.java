@@ -27,6 +27,10 @@ public class ExpiredRedissonRateLimiter extends RedissonRateLimiter {
     private final long rate;
     private final long rateInterval;
     private final RateIntervalUnit rateIntervalUnit;
+
+    /**
+     * 单位 ms
+     */
     private final long ttl;
 
     public ExpiredRedissonRateLimiter(

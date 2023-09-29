@@ -1,11 +1,10 @@
 package cn.addenda.bc.bc.rc.allocator;
 
 import cn.addenda.bc.bc.jc.allocator.AllocatorException;
-import cn.addenda.bc.bc.jc.allocator.AutoExpiredAllocator;
-import cn.addenda.bc.bc.jc.allocator.DefaultAutoExpiredAllocator;
+import cn.addenda.bc.bc.jc.allocator.ExpiredAllocator;
 import cn.addenda.bc.bc.rc.ratelimiter.ExpiredRedissonRateLimiter;
+import cn.addenda.bc.bc.rc.ratelimiter.RRateLimiterWrapper;
 import org.redisson.Redisson;
-import org.redisson.api.RRateLimiter;
 import org.redisson.api.RateIntervalUnit;
 import org.redisson.api.RateType;
 import org.redisson.api.RedissonClient;
@@ -14,13 +13,12 @@ import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 /**
  * @author addenda
  * @since 2023/9/16 11:53
  */
-public class RedissonRateLimiterAutoExpiredAllocator implements AutoExpiredAllocator<RRateLimiter> {
+public class ExpiredRedissonRateLimiterAllocator implements ExpiredAllocator<RRateLimiterWrapper> {
 
     private final RateType mode;
     private final long rate;
@@ -29,9 +27,7 @@ public class RedissonRateLimiterAutoExpiredAllocator implements AutoExpiredAlloc
     private final RedissonClient redissonClient;
     private final CommandAsyncExecutor executor;
 
-    private final AutoExpiredAllocator<ExpiredRedissonRateLimiter> allocator;
-
-    public RedissonRateLimiterAutoExpiredAllocator(
+    public ExpiredRedissonRateLimiterAllocator(
         RateType mode, long rate, long rateInterval,
         RateIntervalUnit rateIntervalUnit, RedissonClient redissonClient) {
         this.mode = mode;
@@ -43,36 +39,32 @@ public class RedissonRateLimiterAutoExpiredAllocator implements AutoExpiredAlloc
         }
         this.redissonClient = redissonClient;
         this.executor = extractCommandAsyncExecutor();
-        this.allocator = new DefaultAutoExpiredAllocator<ExpiredRedissonRateLimiter>() {
-            @Override
-            protected Function<Param, ExpiredRedissonRateLimiter> referenceFunction() {
-                return new Function<Param, ExpiredRedissonRateLimiter>() {
-                    @Override
-                    public ExpiredRedissonRateLimiter apply(Param param) {
-                        String name = param.getName();
-                        TimeUnit timeUnit = param.getTimeUnit();
-                        long timeout = param.getTimeout();
-                        return new ExpiredRedissonRateLimiter(
-                            executor, name, mode, rate, rateInterval, rateIntervalUnit, timeUnit, timeout);
-                    }
-                };
-            }
-        };
     }
 
     @Override
-    public RRateLimiter allocate(String name) {
-        return allocate(name, TimeUnit.DAYS, 36500);
+    public RRateLimiterWrapper allocate(String name) {
+        return allocate(name, TimeUnit.DAYS, 3650);
     }
 
     @Override
     public void release(String name) {
-        allocator.allocate(name).delete();
+        new ExpiredRedissonRateLimiter(
+            executor, name, mode, rate, rateInterval, rateIntervalUnit).delete();
+    }
+
+    /**
+     * 默认过期时间是 interval * 2
+     */
+    @Override
+    public RRateLimiterWrapper allocateWithDefaultTtl(String name) {
+        return allocate(name, TimeUnit.MILLISECONDS, rateIntervalUnit.toMillis(rateInterval) * 2);
     }
 
     @Override
-    public RRateLimiter allocate(String name, TimeUnit timeUnit, long timeout) {
-        return allocator.allocate(name, timeUnit, timeout);
+    public RRateLimiterWrapper allocate(String name, TimeUnit timeUnit, long ttl) {
+        ExpiredRedissonRateLimiter rateLimiter = new ExpiredRedissonRateLimiter(
+            executor, name, mode, rate, rateInterval, rateIntervalUnit, timeUnit, ttl);
+        return new RRateLimiterWrapper(rateLimiter);
     }
 
     private CommandAsyncExecutor extractCommandAsyncExecutor() {
@@ -83,7 +75,7 @@ public class RedissonRateLimiterAutoExpiredAllocator implements AutoExpiredAlloc
 
     @Override
     public String toString() {
-        return "RedissonRateLimiterAutoExpiredAllocator{" +
+        return "ExpiredRedissonRateLimiterAllocator{" +
             "mode=" + mode +
             ", rate=" + rate +
             ", rateInterval=" + rateInterval +

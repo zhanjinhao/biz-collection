@@ -2,6 +2,7 @@ package cn.addenda.bc.bc.rc.ratelimiter;
 
 import cn.addenda.bc.bc.jc.ratelimiter.MultiPermitsRateLimiter;
 import cn.addenda.bc.bc.jc.ratelimiter.RateLimiterException;
+import lombok.Getter;
 import org.redisson.api.RRateLimiter;
 
 import java.util.concurrent.TimeUnit;
@@ -12,6 +13,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class RRateLimiterWrapper implements MultiPermitsRateLimiter {
 
+    @Getter
     private final RRateLimiter rateLimiter;
 
     public RRateLimiterWrapper(RRateLimiter rateLimiter) {
