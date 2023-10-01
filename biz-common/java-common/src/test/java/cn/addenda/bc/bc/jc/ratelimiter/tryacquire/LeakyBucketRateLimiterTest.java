@@ -11,7 +11,7 @@ public class LeakyBucketRateLimiterTest {
 
     @Test
     public void test1() throws Exception {
-        LeakyBucketRateLimiter leakyBucketRateLimiter = new LeakyBucketRateLimiter(200L, 1);
+        LeakyBucketRateLimiter leakyBucketRateLimiter = new LeakyBucketRateLimiter(200L, 2);
         new RateLimiterBaseTest(leakyBucketRateLimiter).test(true);
     }
 

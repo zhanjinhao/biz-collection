@@ -71,8 +71,8 @@ public class RequestIntervalRateLimiter implements RateLimiter {
         while (!fg) {
             long now = System.currentTimeMillis();
             long latest = latestPassedTime.get();
-            long expectedTime = latest + interval;
             // 需要等待多久才有获取请求的机会
+            long expectedTime = latest + interval;
             if (expectedTime <= now) {
                 fg = latestPassedTime.compareAndSet(latest, now);
             } else {

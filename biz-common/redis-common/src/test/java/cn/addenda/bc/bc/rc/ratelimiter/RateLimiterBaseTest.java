@@ -32,6 +32,9 @@ public class RateLimiterBaseTest {
         BlockingQueue<Long> blockingQueue = new LinkedBlockingDeque<>();
         for (int i = 0; i < 100; i++) {
             threadList.add(new Thread(() -> {
+
+                SleepUtils.sleep(TimeUnit.SECONDS, 1);
+
                 while (true) {
                     boolean b = rateLimiter.tryAcquire();
                     acquireTimes.incrementAndGet();

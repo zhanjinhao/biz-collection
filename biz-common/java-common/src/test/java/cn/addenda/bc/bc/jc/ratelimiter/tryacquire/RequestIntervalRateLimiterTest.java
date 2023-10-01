@@ -11,7 +11,7 @@ public class RequestIntervalRateLimiterTest {
 
     @Test
     public void test1() throws Exception {
-        RequestIntervalRateLimiter requestIntervalRateLimiter = new RequestIntervalRateLimiter(10d);
+        RequestIntervalRateLimiter requestIntervalRateLimiter = new RequestIntervalRateLimiter(2d);
         new RateLimiterBaseTest(requestIntervalRateLimiter).test(true);
     }
 
