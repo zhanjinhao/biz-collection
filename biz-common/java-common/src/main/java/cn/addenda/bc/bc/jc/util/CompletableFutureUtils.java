@@ -13,7 +13,7 @@ import java.util.function.BiConsumer;
  * @author zhangtianci7, addenda
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class CompletableFutureExpandUtils {
+public class CompletableFutureUtils {
 
     /**
      * 如果在给定超时之前未完成，则异常完成此 CompletableFuture 并抛出 {@link TimeoutException} 。
@@ -120,7 +120,7 @@ public class CompletableFutureExpandUtils {
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
                 t.setDaemon(true);
-                t.setName("CompletableFutureExpandUtilsDelayScheduler");
+                t.setName("CompletableFutureUtilsDelayScheduler");
                 return t;
             }
         }

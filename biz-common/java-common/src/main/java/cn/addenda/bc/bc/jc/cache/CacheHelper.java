@@ -6,13 +6,9 @@ import cn.addenda.bc.bc.jc.allocator.lock.ReentrantLockAllocator;
 import cn.addenda.bc.bc.jc.allocator.ratelimiter.RateLimiterAllocator;
 import cn.addenda.bc.bc.jc.allocator.ratelimiter.TokenBucketRateLimiterAllocator;
 import cn.addenda.bc.bc.jc.concurrent.SimpleNamedThreadFactory;
-import cn.addenda.bc.bc.jc.function.TRunnable;
 import cn.addenda.bc.bc.jc.ratelimiter.RateLimiter;
 import cn.addenda.bc.bc.jc.ratelimiter.RequestIntervalRateLimiter;
-import cn.addenda.bc.bc.jc.util.CompletableFutureExpandUtils;
-import cn.addenda.bc.bc.jc.util.DateUtils;
-import cn.addenda.bc.bc.jc.util.JacksonUtils;
-import cn.addenda.bc.bc.jc.util.SleepUtils;
+import cn.addenda.bc.bc.jc.util.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.Getter;
 import lombok.Setter;
@@ -187,7 +183,7 @@ public class CacheHelper implements DisposableBean {
                     t = deleteTaskQueue.take();
                     final DeleteTask take = t;
                     String key = take.getKey();
-                    CompletableFutureExpandUtils.orTimeout(CompletableFuture.runAsync(() -> {
+                    CompletableFutureUtils.orTimeout(CompletableFuture.runAsync(() -> {
                         take.setRealExecutionTime(System.currentTimeMillis());
                         kvCache.delete(key);
                         log.info(getDelayDeleteMsg(key, take, "成功"));
@@ -264,7 +260,7 @@ public class CacheHelper implements DisposableBean {
     private void doDelete(String key, long l) {
         String xId = UUID.randomUUID().toString();
         try {
-            runAgainWhenException(() -> kvCache.delete(key));
+            RetryUtils.retryWhenException(() -> kvCache.delete(key), key);
             DeleteTask deleteTask = new DeleteTask(xId, key, 2 * (System.currentTimeMillis() - l));
             log.info(CLEAR_CACHE_MSG, key, "成功", xId, toDateTimeStr(deleteTask.getExpectedExecutionTime()), "延迟删除");
             if (cacheBuildEs != null && !cacheBuildEs.isShutdown()) {
@@ -275,18 +271,6 @@ public class CacheHelper implements DisposableBean {
             log.error(CLEAR_CACHE_MSG, key, "异常", xId, toDateTimeStr(deleteTask.getExpectedExecutionTime()), "重试", e);
             if (cacheBuildEs != null && !cacheBuildEs.isShutdown()) {
                 deleteTaskQueue.put(deleteTask);
-            }
-        }
-    }
-
-    private void runAgainWhenException(TRunnable runnable) throws Throwable {
-        try {
-            runnable.run();
-        } catch (Throwable throwable1) {
-            try {
-                runnable.run();
-            } catch (Throwable throwable2) {
-                throw throwable2;
             }
         }
     }
@@ -615,9 +599,16 @@ public class CacheHelper implements DisposableBean {
     @Override
     public void destroy() throws Exception {
         if (cacheBuildEs != null) {
-            cacheBuildEs.shutdown();
-            if (!cacheBuildEs.awaitTermination(1, TimeUnit.MINUTES)) {
-                log.error("CacheBuildEs 关闭后等待超过1分钟未终止：{}", cacheBuildEs);
+            try {
+                cacheBuildEs.shutdown();
+                if (!cacheBuildEs.awaitTermination(1, TimeUnit.MINUTES)) {
+                    log.error("CacheHelper-Rebuild 关闭后等待超过1分钟未终止：{}。", cacheBuildEs);
+                }
+            } catch (Exception e) {
+                log.error("CacheHelper-Rebuild 关闭异常：{}。", cacheBuildEs, e);
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
     }

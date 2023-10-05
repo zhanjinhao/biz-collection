@@ -2,9 +2,9 @@ package cn.addenda.bc.bc.sc.idempotence;
 
 import cn.addenda.bc.bc.ServiceException;
 import cn.addenda.bc.bc.jc.function.TBiFunction;
-import cn.addenda.bc.bc.jc.function.TRunnable;
 import cn.addenda.bc.bc.jc.function.TSupplier;
 import cn.addenda.bc.bc.jc.util.JacksonUtils;
+import cn.addenda.bc.bc.jc.util.RetryUtils;
 import cn.addenda.bc.bc.jc.util.SleepUtils;
 import cn.addenda.bc.bc.jc.util.TimeUnitUtils;
 import cn.addenda.bc.bc.sc.springcontext.ValueResolverHelper;
@@ -177,7 +177,7 @@ public class IdempotenceSupport implements EnvironmentAware, InitializingBean, A
                     throw exceptionCallback(storageCenter, param, scenario, arguments, ConsumeStage.CONSUME, "Biz consumption error.", e);
                 case REQUEST:
                     try {
-                        runAgainWhenException(() -> storageCenter.delete(param));
+                        RetryUtils.retryWhenException(() -> storageCenter.delete(param), param);
                     } catch (Throwable e1) {
                         throw exceptionCallback(storageCenter, param, scenario, arguments, ConsumeStage.CONSUME_DELETE,
                             "Biz consumption interrupt and deletion error.", e1);
@@ -191,7 +191,7 @@ public class IdempotenceSupport implements EnvironmentAware, InitializingBean, A
             throw exceptionCallback(storageCenter, param, scenario, arguments, ConsumeStage.CONSUME, "Biz consumption error.", e);
         }
         try {
-            runAgainWhenException(() -> storageCenter.casStatus(param, ConsumeStatus.CONSUMING, ConsumeStatus.SUCCESS, false));
+            RetryUtils.retryWhenException(() -> storageCenter.casStatus(param, ConsumeStatus.CONSUMING, ConsumeStatus.SUCCESS, false), param);
             return o;
         } catch (Throwable e) {
             IdempotenceScenario scenario = attr.getScenario();
@@ -246,7 +246,7 @@ public class IdempotenceSupport implements EnvironmentAware, InitializingBean, A
         } finally {
             if (consumeStage == ConsumeStage.BEFORE_CONSUME) {
                 try {
-                    runAgainWhenException(() -> storageCenter.delete(param));
+                    RetryUtils.retryWhenException(() -> storageCenter.delete(param), param);
                 } catch (Throwable e) {
                     String argsJson = JacksonUtils.objectToString(arguments);
                     log.error("Post handle exception error. Delete [{}] error. Scenario: [{}]. ConsumeMode: [{}]. ConsumeStage: [{}]. Arguments: [{}]. XId: [{}].",
@@ -254,7 +254,7 @@ public class IdempotenceSupport implements EnvironmentAware, InitializingBean, A
                 }
             } else if (consumeStage == ConsumeStage.CONSUME) {
                 try {
-                    runAgainWhenException(() -> storageCenter.casStatus(param, ConsumeStatus.CONSUMING, ConsumeStatus.EXCEPTION, false));
+                    RetryUtils.retryWhenException(() -> storageCenter.casStatus(param, ConsumeStatus.CONSUMING, ConsumeStatus.EXCEPTION, false), param);
                 } catch (Throwable e) {
                     String argsJson = JacksonUtils.objectToString(arguments);
                     log.error("Post handle exception error. CAS [{}] CONSUMING to EXCEPTION error. Scenario: [{}]. ConsumeMode: [{}]. ConsumeStage: [{}]. Arguments: [{}]. XId: [{}]."
@@ -262,7 +262,7 @@ public class IdempotenceSupport implements EnvironmentAware, InitializingBean, A
                 }
             } else if (consumeStage == ConsumeStage.BEFORE_RETRY) {
                 try {
-                    runAgainWhenException(() -> storageCenter.casStatus(param, ConsumeStatus.CONSUMING, ConsumeStatus.EXCEPTION, false));
+                    RetryUtils.retryWhenException(() -> storageCenter.casStatus(param, ConsumeStatus.CONSUMING, ConsumeStatus.EXCEPTION, false), param);
                 } catch (Throwable e) {
                     String argsJson = JacksonUtils.objectToString(arguments);
                     log.error("Post handle exception error. Reset [{}] CONSUMING to EXCEPTION error. Scenario: [{}]. ConsumeMode: [{}]. ConsumeStage: [{}]. Arguments: [{}]. XId: [{}]."
@@ -292,18 +292,6 @@ public class IdempotenceSupport implements EnvironmentAware, InitializingBean, A
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
-    }
-
-    private void runAgainWhenException(TRunnable runnable) throws Throwable {
-        try {
-            runnable.run();
-        } catch (Throwable throwable1) {
-            try {
-                runnable.run();
-            } catch (Throwable throwable2) {
-                throw throwable2;
-            }
-        }
     }
 
 }

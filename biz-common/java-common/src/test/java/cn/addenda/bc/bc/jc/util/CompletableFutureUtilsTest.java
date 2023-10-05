@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  * @since 2023/10/3 9:26
  */
 @Slf4j
-public class CompletableFutureExpandUtilsTest {
+public class CompletableFutureUtilsTest {
 
     @Test
     public void test1() {
@@ -30,35 +30,35 @@ public class CompletableFutureExpandUtilsTest {
 
         log.info("start ");
         CompletableFuture<Void> f1 = CompletableFuture.runAsync(new NamedRunnable("f1"), threadPoolExecutor);
-        CompletableFutureExpandUtils.orTimeout(f1, 10, TimeUnit.SECONDS).handle(
+        CompletableFutureUtils.orTimeout(f1, 10, TimeUnit.SECONDS).handle(
             (unused, throwable) -> {
                 log.error("f1" + throwable.toString());
                 return null;
             });
 
         CompletableFuture<Void> f2 = CompletableFuture.runAsync(new NamedRunnable("f2"), threadPoolExecutor);
-        CompletableFutureExpandUtils.orTimeout(f2, 10, TimeUnit.SECONDS).handle(
+        CompletableFutureUtils.orTimeout(f2, 10, TimeUnit.SECONDS).handle(
             (unused, throwable) -> {
                 log.error("f2" + throwable.toString());
                 return null;
             });
 
         CompletableFuture<Void> f3 = CompletableFuture.runAsync(new NamedRunnable("f3"), threadPoolExecutor);
-        CompletableFutureExpandUtils.orTimeout(f3, 10, TimeUnit.SECONDS).handle(
+        CompletableFutureUtils.orTimeout(f3, 10, TimeUnit.SECONDS).handle(
             (unused, throwable) -> {
                 log.error("f3" + throwable.toString());
                 return null;
             });
 
         CompletableFuture<Void> f4 = CompletableFuture.runAsync(new NamedRunnable("f4"), threadPoolExecutor);
-        CompletableFutureExpandUtils.orTimeout(f4, 10, TimeUnit.SECONDS).handle(
+        CompletableFutureUtils.orTimeout(f4, 10, TimeUnit.SECONDS).handle(
             (unused, throwable) -> {
                 log.error("f4" + throwable.toString());
                 return null;
             });
 
         CompletableFuture<Void> f5 = CompletableFuture.runAsync(new NamedRunnable("f5"), threadPoolExecutor);
-        CompletableFutureExpandUtils.orTimeout(f5, 10, TimeUnit.SECONDS).handle(
+        CompletableFutureUtils.orTimeout(f5, 10, TimeUnit.SECONDS).handle(
             (unused, throwable) -> {
                 log.error("f5" + throwable.toString());
                 return null;
