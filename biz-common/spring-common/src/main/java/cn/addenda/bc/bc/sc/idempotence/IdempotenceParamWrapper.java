@@ -1,6 +1,5 @@
-package cn.addenda.bc.bc.sc.idempotent.storagecenter;
+package cn.addenda.bc.bc.sc.idempotence;
 
-import cn.addenda.bc.bc.sc.idempotent.ConsumeMode;
 import lombok.*;
 
 /**
@@ -13,7 +12,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class IdempotentParamWrapper {
+public class IdempotenceParamWrapper {
 
     private String namespace;
 
@@ -23,7 +22,9 @@ public class IdempotentParamWrapper {
 
     private ConsumeMode consumeMode;
 
-    private int timeoutSecs;
+    private int ttlSecs;
+
+    private String xId;
 
     public String getFullKey() {
         return namespace + ":" + prefix + ":" + key;

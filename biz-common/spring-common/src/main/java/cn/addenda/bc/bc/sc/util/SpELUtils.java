@@ -59,8 +59,4 @@ public class SpELUtils {
         return spEL;
     }
 
-    public static boolean constKey(String spEL) {
-        return StringUtils.hasLength(spEL) && !spEL.contains("#");
-    }
-
 }

@@ -1,4 +1,4 @@
-package cn.addenda.bc.bc.sc.idempotent;
+package cn.addenda.bc.bc.sc.idempotence;
 
 /**
  * @author addenda

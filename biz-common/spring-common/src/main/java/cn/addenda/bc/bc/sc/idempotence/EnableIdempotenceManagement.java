@@ -1,4 +1,4 @@
-package cn.addenda.bc.bc.sc.idempotent;
+package cn.addenda.bc.bc.sc.idempotence;
 
 import org.springframework.context.annotation.AdviceMode;
 import org.springframework.context.annotation.Import;
@@ -13,10 +13,10 @@ import java.lang.annotation.*;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Import(IdempotentSelector.class)
-public @interface EnableIdempotent {
+@Import(IdempotenceSelector.class)
+public @interface EnableIdempotenceManagement {
 
-    String namespace() default "idempotent";
+    String namespace() default "idempotence";
 
     int order() default Ordered.LOWEST_PRECEDENCE;
 

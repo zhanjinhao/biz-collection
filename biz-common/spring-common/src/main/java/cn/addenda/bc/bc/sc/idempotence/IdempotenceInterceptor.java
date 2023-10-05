@@ -1,4 +1,4 @@
-package cn.addenda.bc.bc.sc.idempotent;
+package cn.addenda.bc.bc.sc.idempotence;
 
 import cn.addenda.bc.bc.jc.util.ExceptionUtil;
 import org.aopalliance.intercept.MethodInterceptor;
@@ -12,7 +12,7 @@ import java.lang.reflect.Method;
  * @author addenda
  * @since 2022/9/29 13:51
  */
-public class IdempotentInterceptor extends IdempotentSupport implements MethodInterceptor {
+public class IdempotenceInterceptor extends IdempotenceSupport implements MethodInterceptor {
 
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
@@ -26,20 +26,20 @@ public class IdempotentInterceptor extends IdempotentSupport implements MethodIn
             return invocation.proceed();
         }
 
-        IdempotentAttr attr = IdempotentAttr.builder()
-                .prefix(annotation.prefix())
-                .spEL(annotation.spEL())
-                .repeatConsumptionMsg(annotation.repeatConsumptionMsg())
-                .scenario(annotation.scenario())
-                .storageCenter(annotation.storageCenter())
-                .consumeMode(annotation.consumeMode())
-                .timeUnit(annotation.timeUnit())
-                .expectedCost(annotation.expectedCost())
-                .timeout(annotation.timeout())
-                .build();
+        IdempotenceAttr attr = IdempotenceAttr.builder()
+            .prefix(annotation.prefix())
+            .spEL(annotation.spEL())
+            .repeatConsumptionMsg(annotation.repeatConsumptionMsg())
+            .scenario(annotation.scenario())
+            .storageCenter(annotation.storageCenter())
+            .consumeMode(annotation.consumeMode())
+            .timeUnit(annotation.timeUnit())
+            .expectCost(annotation.expectCost())
+            .ttl(annotation.ttl())
+            .build();
 
         try {
-            return invokeWithIdempotent(attr, invocation.getArguments(), invocation::proceed, invocation.getMethod());
+            return invokeWithinIdempotence(attr, invocation.getArguments(), invocation::proceed, invocation.getMethod());
         } catch (Throwable throwable) {
             throw ExceptionUtil.unwrapThrowable(throwable);
         }

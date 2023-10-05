@@ -16,6 +16,23 @@ public class ConnectionUtils {
     private ConnectionUtils() {
     }
 
+    public static boolean setAutoCommitFalse(Connection connection) throws SQLException {
+        boolean originalAutoCommit = connection.getAutoCommit();
+        if (originalAutoCommit) {
+            connection.setAutoCommit(false);
+        }
+        return originalAutoCommit;
+    }
+
+    public static void closeAndResetAutoCommit(Connection connection, boolean originalAutoCommit) throws SQLException {
+        if (connection != null) {
+            if (originalAutoCommit) {
+                connection.setAutoCommit(true);
+            }
+            connection.close();
+        }
+    }
+
     public static void close(AutoCloseable connection) {
         try {
             connection.close();
@@ -51,21 +68,6 @@ public class ConnectionUtils {
             connection.commit();
         } catch (SQLException e) {
             String msg = String.format("commit 失败，connection: [%s]。", connection);
-            log.error(msg, e);
-            throw new UtilException(msg, e);
-        }
-    }
-
-    /**
-     * @return 此方法执行执行之前连接是否是自动提交
-     */
-    public static int setAutoCommit(Connection connection, boolean expect) {
-        try {
-            boolean autoCommit = connection.getAutoCommit();
-            connection.setAutoCommit(expect);
-            return autoCommit ? 1 : 0;
-        } catch (SQLException e) {
-            String msg = String.format("设置 connection [%s] 的 autoCommit 为 [%s] 失败。", connection, expect);
             log.error(msg, e);
             throw new UtilException(msg, e);
         }

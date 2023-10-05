@@ -26,10 +26,12 @@ public class DbWorkerIdGenerator implements SnowflakeWorkerIdGenerator {
     }
 
     @Override
+    @SneakyThrows
     public long workerId() {
-        Connection connection = ConnectionUtils.openConnection(dataSource);
+        Connection connection = dataSource.getConnection();
+        boolean originalAutoCommit = false;
         try {
-            ConnectionUtils.setAutoCommit(connection, false);
+            originalAutoCommit = ConnectionUtils.setAutoCommitFalse(connection);
             ConnectionUtils.setTransactionIsolation(connection, TRANSACTION_SERIALIZABLE);
 
             boolean b = checkAppNameExists(connection);
@@ -39,10 +41,10 @@ public class DbWorkerIdGenerator implements SnowflakeWorkerIdGenerator {
 
             long workerId = queryNextId(connection);
             incrementNextId(connection, workerId);
-            ConnectionUtils.commit(connection);
+            connection.commit();
             return (workerId % (1 << SnowflakeIdGenerator.WORKER_ID_BITS)) - 1L;
         } finally {
-            ConnectionUtils.close(connection);
+            ConnectionUtils.closeAndResetAutoCommit(connection, originalAutoCommit);
         }
     }
 

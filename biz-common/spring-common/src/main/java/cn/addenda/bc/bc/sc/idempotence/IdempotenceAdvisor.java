@@ -1,4 +1,4 @@
-package cn.addenda.bc.bc.sc.idempotent;
+package cn.addenda.bc.bc.sc.idempotence;
 
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.AbstractBeanFactoryPointcutAdvisor;
@@ -12,14 +12,14 @@ import java.lang.reflect.Method;
  * @author addenda
  * @since 2022/9/29 13:52
  */
-public class IdempotentAdvisor extends AbstractBeanFactoryPointcutAdvisor {
+public class IdempotenceAdvisor extends AbstractBeanFactoryPointcutAdvisor {
 
     @Override
     public Pointcut getPointcut() {
-        return new IdempotentPointcut();
+        return new IdempotencePointcut();
     }
 
-    public static class IdempotentPointcut extends StaticMethodMatcherPointcut {
+    public static class IdempotencePointcut extends StaticMethodMatcherPointcut {
 
         @Override
         public boolean matches(Method method, Class<?> targetClass) {

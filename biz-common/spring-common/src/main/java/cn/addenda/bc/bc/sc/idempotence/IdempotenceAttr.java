@@ -1,4 +1,4 @@
-package cn.addenda.bc.bc.sc.idempotent;
+package cn.addenda.bc.bc.sc.idempotence;
 
 import lombok.*;
 
@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class IdempotentAttr {
+public class IdempotenceAttr {
 
     public static final String DEFAULT_PREFIX = "prefix";
 
@@ -22,10 +22,10 @@ public class IdempotentAttr {
 
     public static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.SECONDS;
 
-    public static final String DEFAULT_STORAGE_CENTER = "redisStorageCenter";
+    public static final String DEFAULT_STORAGE_CENTER = "dbStorageCenter";
 
-    public static final int DEFAULT_TIME_OUT = 60 * 60 * 24;
-    public static final int DEFAULT_EXPECTED_COST = 1;
+    public static final int DEFAULT_TTL = 60 * 60 * 24;
+    public static final int DEFAULT_EXPECT_COST = 1;
 
     @Builder.Default
     private String prefix = DEFAULT_PREFIX;
@@ -35,11 +35,7 @@ public class IdempotentAttr {
     @Builder.Default
     private String repeatConsumptionMsg = DEFAULT_REPEAT_CONSUMPTION_MSG;
 
-    /**
-     * 对于REST场景来说，如果数据已经消费过，对外抛出BusinessException。<br/>
-     * 对于MQ场景来说，如果数据已经消费过，打印ERROR日志。
-     */
-    private IdempotentScenario scenario;
+    private IdempotenceScenario scenario;
 
     @Builder.Default
     private String storageCenter = DEFAULT_STORAGE_CENTER;
@@ -51,9 +47,9 @@ public class IdempotentAttr {
     private TimeUnit timeUnit = DEFAULT_TIME_UNIT;
 
     @Builder.Default
-    private int expectedCost = DEFAULT_EXPECTED_COST;
+    private int expectCost = DEFAULT_EXPECT_COST;
 
     @Builder.Default
-    private int timeout = DEFAULT_TIME_OUT;
+    private int ttl = DEFAULT_TTL;
 
 }
