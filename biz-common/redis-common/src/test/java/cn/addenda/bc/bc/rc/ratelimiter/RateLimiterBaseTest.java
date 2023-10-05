@@ -30,7 +30,7 @@ public class RateLimiterBaseTest {
         AtomicLong passTimes = new AtomicLong(0L);
         List<Thread> threadList = new ArrayList<>();
         BlockingQueue<Long> blockingQueue = new LinkedBlockingDeque<>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 10; i++) {
             threadList.add(new Thread(() -> {
 
                 SleepUtils.sleep(TimeUnit.SECONDS, 1);
@@ -43,7 +43,7 @@ public class RateLimiterBaseTest {
                         passTimes.incrementAndGet();
                     }
                     try {
-                        Thread.sleep(r.nextInt(50) + 50);
+                        Thread.sleep(r.nextInt(5) + 50);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }

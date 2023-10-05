@@ -27,7 +27,7 @@ public class ExternallyConfiguredRedissonRateLimiterTest {
             extractCommandAsyncExecutor(redissonClient), "yanzhengma",
             "redis-common:ExternallyConfiguredRedissonRateLimiterTest");
 
-        rateLimiter.trySetRate(RateType.OVERALL, 10, 10, RateIntervalUnit.SECONDS);
+        rateLimiter.setRate(RateType.OVERALL, 1, 2, RateIntervalUnit.SECONDS);
 
         RateLimiterConfig config = rateLimiter.getConfig();
         System.out.println(config.getRateType());
