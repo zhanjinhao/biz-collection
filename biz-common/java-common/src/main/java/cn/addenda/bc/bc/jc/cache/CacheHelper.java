@@ -6,15 +6,19 @@ import cn.addenda.bc.bc.jc.allocator.lock.ReentrantLockAllocator;
 import cn.addenda.bc.bc.jc.allocator.ratelimiter.RateLimiterAllocator;
 import cn.addenda.bc.bc.jc.allocator.ratelimiter.TokenBucketRateLimiterAllocator;
 import cn.addenda.bc.bc.jc.concurrent.SimpleNamedThreadFactory;
+import cn.addenda.bc.bc.jc.function.TRunnable;
 import cn.addenda.bc.bc.jc.ratelimiter.RateLimiter;
 import cn.addenda.bc.bc.jc.ratelimiter.RequestIntervalRateLimiter;
+import cn.addenda.bc.bc.jc.util.CompletableFutureExpandUtils;
 import cn.addenda.bc.bc.jc.util.DateUtils;
 import cn.addenda.bc.bc.jc.util.JacksonUtils;
 import cn.addenda.bc.bc.jc.util.SleepUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.DisposableBean;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import java.lang.reflect.Field;
@@ -23,6 +27,7 @@ import java.lang.reflect.Type;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,7 +41,7 @@ import java.util.function.Supplier;
  * @since 2023/05/30
  */
 @Slf4j
-public class CacheHelper {
+public class CacheHelper implements DisposableBean {
 
     public static final String NULL_OBJECT = "_NIL";
 
@@ -48,18 +53,19 @@ public class CacheHelper {
      * rdf: realtime data first
      */
     public static final String REALTIME_DATA_FIRST_PREFIX = "rdf:";
-    private static final String BUILD_CACHE_SUCCESS_MSG = "构建缓存 [{}] 成功，获取到数据 [{}]，缓存到期时间 [{}]。";
-    private static final String BUILD_CACHE_ERROR_MSG = "构建缓存 [{}] 失败！";
 
-    private static final String UNEXPIRED_MSG = "获取到 [{}] 的数据 [{}] 未过期。";
-    private static final String EXPIRED_MSG = "获取到 [{}] 的数据 [{}] 已过期！";
-    private static final String CLEAR_MSG = "清理缓存 [{}] 成功。";
+    private static final String CACHE_EXPIRED_OR_NOT_MSG = "获取到 [{}] 的数据 [{}] [{}]。";
 
-    private static final String PPF_SUBMIT_BUILD_CACHE_TASK_SUCCESS = "获取锁 [{}] 成功，提交了缓存重建任务，返回过期数据 [{}]。";
-    private static final String PPF_SUBMIT_BUILD_CACHE_TASK_FAILED = "获取锁 [{}] 失败，未提交缓存重建任务，返回过期数据 [{}]。";
+    private static final String BUILD_CACHE_SUCCESS_MSG = "构建缓存 [{}] [成功]，获取到数据 [{}]，缓存到期时间 [{}]。";
+    private static final String PPF_BUILD_CACHE_MSG = "异步构建缓存 [{}] [{}]，提交时间[{}]，最大执行耗时[{}]ms，开始执行时间[{}]，最大完成时间[{}]，完成时间[{}]。";
+    private static final String PPF_SUBMIT_BUILD_CACHE_TASK_SUCCESS_MSG = "获取锁 [{}] [成功]，提交了缓存重建任务，返回过期数据 [{}]。";
+    private static final String PPF_SUBMIT_BUILD_CACHE_TASK_FAILED_MSG = "获取锁 [{}] [失败]，未提交缓存重建任务，返回过期数据 [{}]。";
 
-    private static final String RDF_TRY_LOCK_FAIL_TERMINAL = "第 [{}] 次未获取到锁 [{}]，终止获取锁";
-    private static final String RDF_TRY_LOCK_FAIL_WAIT = "第 [{}] 次未获取到锁 [{}]，休眠 [{}] ms";
+    private static final String RDF_TRY_LOCK_FAIL_TERMINAL_MSG = "第 [{}] 次未获取到锁 [{}]，终止获取锁";
+    private static final String RDF_TRY_LOCK_FAIL_WAIT_MSG = "第 [{}] 次未获取到锁 [{}]，休眠 [{}]ms";
+
+    private static final String CLEAR_CACHE_MSG = "清理缓存 [{}] [{}]。xId [{}]。预计 [{}] 执行 [{}]。";
+    private static final String DELAY_CLEAR_CACHE_MSG = "延迟清理缓存 [%s] [%s]。xId[%s]。出生时间[%s]，提交时间[%s]，延迟[%s]ms，预期开始执行时间[%s]，实际开始执行时间[%s]，最大完成时间[%s]，当前时间[%s]。";
 
     /**
      * ms <p/>
@@ -119,6 +125,8 @@ public class CacheHelper {
 
     public static final long DEFAULT_PPF_EXPIRATION_DETECTION_INTERVAL = 100L;
 
+    private DelayQueue<DeleteTask> deleteTaskQueue;
+
     public CacheHelper(KVCache<String, String> kvCache, long ppfExpirationDetectionInterval, LockAllocator<?> lockAllocator,
                        ExecutorService cacheBuildEs, RateLimiterAllocator<?> realQueryRateLimiterAllocator, boolean useServiceException) {
         this.kvCache = kvCache;
@@ -127,6 +135,7 @@ public class CacheHelper {
         this.cacheBuildEs = cacheBuildEs;
         this.realQueryRateLimiterAllocator = realQueryRateLimiterAllocator;
         this.useServiceException = useServiceException;
+        this.initDeleteTaskConsumer();
     }
 
     public CacheHelper(KVCache<String, String> kvCache, long ppfExpirationDetectionInterval, LockAllocator<?> lockAllocator) {
@@ -136,6 +145,7 @@ public class CacheHelper {
         this.cacheBuildEs = defaultCacheBuildEs();
         this.realQueryRateLimiterAllocator = new TokenBucketRateLimiterAllocator(10, 10);
         this.useServiceException = false;
+        this.initDeleteTaskConsumer();
     }
 
     public CacheHelper(KVCache<String, String> kvCache, long ppfExpirationDetectionInterval) {
@@ -145,6 +155,7 @@ public class CacheHelper {
         this.cacheBuildEs = defaultCacheBuildEs();
         this.realQueryRateLimiterAllocator = new TokenBucketRateLimiterAllocator(10, 10);
         this.useServiceException = false;
+        this.initDeleteTaskConsumer();
     }
 
     public CacheHelper(KVCache<String, String> kvCache) {
@@ -154,6 +165,7 @@ public class CacheHelper {
         this.cacheBuildEs = defaultCacheBuildEs();
         this.realQueryRateLimiterAllocator = new TokenBucketRateLimiterAllocator(10, 10);
         this.useServiceException = false;
+        this.initDeleteTaskConsumer();
     }
 
     protected ExecutorService defaultCacheBuildEs() {
@@ -162,42 +174,121 @@ public class CacheHelper {
             2,
             30,
             TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>(10),
+            new LinkedBlockingQueue<>(100000),
             new SimpleNamedThreadFactory("CacheHelper-Rebuild"));
     }
 
-    public <I> void acceptWithPpf(String keyPrefix, I id, Consumer<I> consumer) {
-        String key = keyPrefix + PERFORMANCE_FIRST_PREFIX + id;
-        consumer.accept(id);
-        kvCache.remove(key);
-        log.info(CLEAR_MSG, key);
+    protected void initDeleteTaskConsumer() {
+        deleteTaskQueue = new DelayQueue<>();
+        Thread deleteTaskConsumer = new Thread(() -> {
+            while (true) {
+                DeleteTask t = null;
+                try {
+                    t = deleteTaskQueue.take();
+                    final DeleteTask take = t;
+                    String key = take.getKey();
+                    CompletableFutureExpandUtils.orTimeout(CompletableFuture.runAsync(() -> {
+                        take.setRealExecutionTime(System.currentTimeMillis());
+                        kvCache.delete(key);
+                        log.info(getDelayDeleteMsg(key, take, "成功"));
+                    }, cacheBuildEs), take.getTimeout(), TimeUnit.MILLISECONDS).exceptionally(
+                        throwable -> {
+                            if (throwable instanceof CompletionException && throwable.getCause() instanceof TimeoutException) {
+                                log.error(getDelayDeleteMsg(key, take, "超时"));
+                            } else {
+                                deleteTaskQueue.put(new DeleteTask(take.getXId(), take.getKey(), take.getSince(), take.getDelay()));
+                                log.error(getDelayDeleteMsg(key, take, "异常"), throwable);
+                            }
+                            return null;
+                        });
+                } catch (RejectedExecutionException e) {
+                    if (t != null) {
+                        String key = t.getKey();
+                        log.error(getDelayDeleteMsg(key, t, "线程池触发拒绝策略"), e);
+                    }
+                } catch (InterruptedException e) {
+                    break;
+                } catch (Exception e) {
+                    if (t != null) {
+                        String key = t.getKey();
+                        log.error(getDelayDeleteMsg(key, t, "未知异常"), e);
+                    }
+                }
+            }
+        });
+        deleteTaskConsumer.setDaemon(true);
+        deleteTaskConsumer.setName("DeleteTaskConsumer");
+        deleteTaskConsumer.start();
     }
 
-    public <I> void acceptWithPpfAsync(String keyPrefix, I id, Consumer<I> consumer) {
-        String key = keyPrefix + PERFORMANCE_FIRST_PREFIX + id;
+    private String getDelayDeleteMsg(String key, DeleteTask take, String prefix) {
+        return String.format(DELAY_CLEAR_CACHE_MSG, key, prefix, take.getXId(), toDateTimeStr(take.getSince()),
+            toDateTimeStr(take.getStart()), take.getDelay(),
+            toDateTimeStr(take.getExpectedExecutionTime()),
+            take.getRealExecutionTime() == null ? "未执行" : toDateTimeStr(take.getRealExecutionTime()),
+            toDateTimeStr(take.getExpectedExecutionTime() + take.getTimeout()),
+            toDateTimeStr(System.currentTimeMillis()));
+    }
+
+    public <I> void acceptWithPpf(String keyPrefix, I id, Consumer<I> consumer) {
+        doAccept(keyPrefix, id, consumer, PERFORMANCE_FIRST_PREFIX);
+    }
+
+    public <I> void acceptWithRdf(String keyPrefix, I id, Consumer<I> consumer) {
+        doAccept(keyPrefix, id, consumer, REALTIME_DATA_FIRST_PREFIX);
+    }
+
+    public <I> void doAccept(String keyPrefix, I id, Consumer<I> consumer, String mode) {
+        String key = keyPrefix + mode + id;
+        long l = System.currentTimeMillis();
         consumer.accept(id);
-        cacheBuildEs.execute(() -> {
-            kvCache.remove(key);
-            log.info(CLEAR_MSG, key);
-        });
+        doDelete(key, l);
     }
 
     public <I, R> R applyWithPpf(String keyPrefix, I id, Function<I, R> function) {
-        String key = keyPrefix + PERFORMANCE_FIRST_PREFIX + id;
+        return doApply(keyPrefix, id, function, PERFORMANCE_FIRST_PREFIX);
+    }
+
+    public <I, R> R applyWithRdf(String keyPrefix, I id, Function<I, R> function) {
+        return doApply(keyPrefix, id, function, REALTIME_DATA_FIRST_PREFIX);
+    }
+
+    private <I, R> R doApply(String keyPrefix, I id, Function<I, R> function, String mode) {
+        String key = keyPrefix + mode + id;
+        long l = System.currentTimeMillis();
         R apply = function.apply(id);
-        kvCache.remove(key);
-        log.info(CLEAR_MSG, key);
+        doDelete(key, l);
         return apply;
     }
 
-    public <I, R> R applyWithPpfAsync(String keyPrefix, I id, Function<I, R> function) {
-        String key = keyPrefix + PERFORMANCE_FIRST_PREFIX + id;
-        R apply = function.apply(id);
-        cacheBuildEs.execute(() -> {
-            kvCache.remove(key);
-            log.info(CLEAR_MSG, key);
-        });
-        return apply;
+    private void doDelete(String key, long l) {
+        String xId = UUID.randomUUID().toString();
+        try {
+            runAgainWhenException(() -> kvCache.delete(key));
+            DeleteTask deleteTask = new DeleteTask(xId, key, 2 * (System.currentTimeMillis() - l));
+            log.info(CLEAR_CACHE_MSG, key, "成功", xId, toDateTimeStr(deleteTask.getExpectedExecutionTime()), "延迟删除");
+            if (cacheBuildEs != null && !cacheBuildEs.isShutdown()) {
+                deleteTaskQueue.put(deleteTask);
+            }
+        } catch (Throwable e) {
+            DeleteTask deleteTask = new DeleteTask(xId, key, (System.currentTimeMillis() - l));
+            log.error(CLEAR_CACHE_MSG, key, "异常", xId, toDateTimeStr(deleteTask.getExpectedExecutionTime()), "重试", e);
+            if (cacheBuildEs != null && !cacheBuildEs.isShutdown()) {
+                deleteTaskQueue.put(deleteTask);
+            }
+        }
+    }
+
+    private void runAgainWhenException(TRunnable runnable) throws Throwable {
+        try {
+            runnable.run();
+        } catch (Throwable throwable1) {
+            try {
+                runnable.run();
+            } catch (Throwable throwable2) {
+                throw throwable2;
+            }
+        }
     }
 
     /**
@@ -255,7 +346,7 @@ public class CacheHelper {
             R data = cacheData.getData();
             // 4.1 判断是否过期，未过期，直接返回
             if (expireTime.isAfter(LocalDateTime.now())) {
-                log.debug(UNEXPIRED_MSG, key, data);
+                log.debug(CACHE_EXPIRED_OR_NOT_MSG, key, data, "未过期");
             }
             // 4.2 判断是否过期，已过期，需要缓存重建
             else {
@@ -265,7 +356,10 @@ public class CacheHelper {
                 AtomicReference<R> newData = new AtomicReference<>(null);
                 if (lock.tryLock()) {
                     try {
+                        long l = System.currentTimeMillis();
                         cacheBuildEs.submit(() -> {
+                            long start = System.currentTimeMillis();
+                            long maxCost = 2 * lockWaitTime;
                             try {
                                 // 查询数据库
                                 R r = rtQuery.apply(id);
@@ -273,8 +367,13 @@ public class CacheHelper {
                                 newData.set(r);
                                 newDataReady.set(true);
                                 setCacheData(key, r, ttl);
+                                if (System.currentTimeMillis() - l > maxCost) {
+                                    log.error(PPF_BUILD_CACHE_MSG, key, "超时", toDateTimeStr(l), maxCost, toDateTimeStr(start),
+                                        toDateTimeStr(l + maxCost), toDateTimeStr(System.currentTimeMillis()));
+                                }
                             } catch (Exception e) {
-                                log.error(BUILD_CACHE_ERROR_MSG, key, e);
+                                log.error(PPF_BUILD_CACHE_MSG, key, "异常", toDateTimeStr(l), maxCost, toDateTimeStr(start),
+                                    toDateTimeStr(l + maxCost), toDateTimeStr(System.currentTimeMillis()), e);
                             }
                         });
                         // 提交完缓存构建任务后休息一段时间，防止其他线程提交缓存构建任务
@@ -282,7 +381,7 @@ public class CacheHelper {
                         if (newDataReady.get()) {
                             return newData.get();
                         } else {
-                            log.info(PPF_SUBMIT_BUILD_CACHE_TASK_SUCCESS, lockKey, data);
+                            log.info(PPF_SUBMIT_BUILD_CACHE_TASK_SUCCESS_MSG, lockKey, data);
                         }
                     } finally {
                         try {
@@ -295,10 +394,10 @@ public class CacheHelper {
                 // 5.2 获取互斥锁，未成功不进行缓存重建
                 else {
                     lockAllocator.release(lockKey);
-                    log.info(PPF_SUBMIT_BUILD_CACHE_TASK_FAILED, lockKey, data);
+                    log.info(PPF_SUBMIT_BUILD_CACHE_TASK_FAILED_MSG, lockKey, data);
 
                     // -----------------------------------------------------------
-                    // 提交重建的线程如果没有再等待时间内没有获取到新的数据，不会走下面的告警。
+                    // 提交重建的线程如果没有在等待时间内获取到新的数据，不会走下面的告警。
                     // 这是为了防止低并发下输出不必要的日志。
                     // -----------------------------------------------------------
 
@@ -307,7 +406,7 @@ public class CacheHelper {
                     RequestIntervalRateLimiter rateLimiter = rateLimiterMap.computeIfAbsent(
                         keyPrefix + PERFORMANCE_FIRST_PREFIX, s -> new RequestIntervalRateLimiter(ppfExpirationDetectionInterval));
                     if (rateLimiter.tryAcquire()) {
-                        log.error(EXPIRED_MSG, key, data);
+                        log.error(CACHE_EXPIRED_OR_NOT_MSG, key, data, "已过期");
                     }
                 }
             }
@@ -325,42 +424,9 @@ public class CacheHelper {
         }
         // 写缓存
         kvCache.set(key, JacksonUtils.objectToString(newCacheData), ttl * 2, TimeUnit.MILLISECONDS);
-        log.info(BUILD_CACHE_SUCCESS_MSG, key, r, DateUtils.format(newCacheData.getExpireTime(), DateUtils.FULL_FORMATTER));
+        log.info(BUILD_CACHE_SUCCESS_MSG, key, r, toDateTimeStr(DateUtils.localDateTimeToTimestamp(newCacheData.getExpireTime())));
     }
 
-    public <I> void acceptWithRdf(String keyPrefix, I id, Consumer<I> consumer) {
-        String key = keyPrefix + REALTIME_DATA_FIRST_PREFIX + id;
-        consumer.accept(id);
-        kvCache.remove(key);
-        log.info(CLEAR_MSG, key);
-    }
-
-    public <I> void acceptWithRdfAsync(String keyPrefix, I id, Consumer<I> consumer) {
-        String key = keyPrefix + REALTIME_DATA_FIRST_PREFIX + id;
-        consumer.accept(id);
-        cacheBuildEs.execute(() -> {
-            kvCache.remove(key);
-            log.info(CLEAR_MSG, key);
-        });
-    }
-
-    public <I, R> R applyWithRdf(String keyPrefix, I id, Function<I, R> function) {
-        String key = keyPrefix + REALTIME_DATA_FIRST_PREFIX + id;
-        R apply = function.apply(id);
-        kvCache.remove(key);
-        log.info(CLEAR_MSG, key);
-        return apply;
-    }
-
-    public <I, R> R applyWithRdfAsync(String keyPrefix, I id, Function<I, R> function) {
-        String key = keyPrefix + REALTIME_DATA_FIRST_PREFIX + id;
-        R apply = function.apply(id);
-        cacheBuildEs.execute(() -> {
-            kvCache.remove(key);
-            log.info(CLEAR_MSG, key);
-        });
-        return apply;
-    }
 
     /**
      * 实时数据优先的缓存查询方法，基于互斥锁实现。
@@ -459,7 +525,7 @@ public class CacheHelper {
         }
         // 3.1如果字符串不为空，返回对象
         if (resultJson != null) {
-            log.debug(UNEXPIRED_MSG, key, resultJson);
+            log.debug(CACHE_EXPIRED_OR_NOT_MSG, key, resultJson, "未过期");
             return JacksonUtils.stringToObject(resultJson, rType);
         }
         // 3.2如果字符串为空，进行缓存构建
@@ -476,7 +542,7 @@ public class CacheHelper {
                         expireTime = expireTime.plus(ttl, ChronoUnit.MILLIS);
                         kvCache.set(key, JacksonUtils.objectToString(r), ttl, TimeUnit.MILLISECONDS);
                     }
-                    log.info(BUILD_CACHE_SUCCESS_MSG, key, r, DateUtils.format(expireTime, DateUtils.FULL_FORMATTER));
+                    log.info(BUILD_CACHE_SUCCESS_MSG, key, r, toDateTimeStr(DateUtils.localDateTimeToTimestamp(expireTime)));
                 }
                 return r;
             };
@@ -510,14 +576,14 @@ public class CacheHelper {
                     lockAllocator.release(lockKey);
                     itr++;
                     if (itr >= rdfBusyLoop) {
-                        log.error(RDF_TRY_LOCK_FAIL_TERMINAL, itr, lockKey);
+                        log.error(RDF_TRY_LOCK_FAIL_TERMINAL_MSG, itr, lockKey);
                         if (useServiceException) {
                             throw new ServiceException("系统繁忙，请稍后再试！");
                         } else {
                             throw new CacheException("系统繁忙，请稍后再试！");
                         }
                     } else {
-                        log.info(RDF_TRY_LOCK_FAIL_WAIT, itr, lockKey, lockWaitTime);
+                        log.info(RDF_TRY_LOCK_FAIL_WAIT_MSG, itr, lockKey, lockWaitTime);
                         SleepUtils.sleep(TimeUnit.MILLISECONDS, lockWaitTime);
                         // 递归进入的时候，当前线程的tryLock是失败的，所以当前线程不持有锁，即递归进入的状态和初次进入的状态一致
                         return doQueryWithRdf(keyPrefix, id, rType, rtQuery, ttl, itr, cache);
@@ -544,6 +610,89 @@ public class CacheHelper {
             log.error("无法设置 TypeReference 的 _type 属性！", e);
             throw new CacheException("无法设置 TypeReference 的 _type 属性！");
         }
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        if (cacheBuildEs != null) {
+            cacheBuildEs.shutdown();
+            if (!cacheBuildEs.awaitTermination(1, TimeUnit.MINUTES)) {
+                log.error("CacheBuildEs 关闭后等待超过1分钟未终止：{}", cacheBuildEs);
+            }
+        }
+    }
+
+    @Getter
+    @ToString
+    private static class DeleteTask implements Delayed {
+
+        /**
+         * 每一次写操作都会生成一个xId。一个xId表示一次更新数据库参数，多次缓存删除重试具备相同的xId。
+         */
+        private final String xId;
+
+        private final String key;
+
+        /**
+         * 出生时间
+         */
+        private final long since;
+
+        /**
+         * 提交时间。由于存在重试场景，所以提交时间和出生时间不一致。
+         */
+        private final long start;
+
+        private final long delay;
+
+        private final long expectedExecutionTime;
+
+        @Setter
+        private Long realExecutionTime;
+
+        DeleteTask(String xId, String key, long delay) {
+            this.xId = xId;
+            this.key = key;
+            this.delay = delay;
+            this.since = System.currentTimeMillis();
+            this.start = System.currentTimeMillis();
+            this.expectedExecutionTime = start + delay;
+        }
+
+        DeleteTask(String xId, String key, long since, long delay) {
+            this.xId = xId;
+            this.key = key;
+            this.delay = delay;
+            this.since = since;
+            this.start = System.currentTimeMillis();
+            this.expectedExecutionTime = start + delay;
+        }
+
+        @Override
+        public long getDelay(TimeUnit unit) {
+            return unit.convert(expectedExecutionTime - System.currentTimeMillis(), unit);
+        }
+
+        @Override
+        public int compareTo(Delayed o) {
+            DeleteTask t = (DeleteTask) o;
+            if (this.expectedExecutionTime - t.expectedExecutionTime < 0) {
+                return -1;
+            } else if (this.expectedExecutionTime == t.expectedExecutionTime) {
+                return 0;
+            } else {
+                return 1;
+            }
+        }
+
+        public long getTimeout() {
+            return delay * 2;
+        }
+
+    }
+
+    private String toDateTimeStr(long ts) {
+        return DateUtils.format(DateUtils.timestampToLocalDateTime(ts), DateUtils.FULL_FORMATTER);
     }
 
 }
