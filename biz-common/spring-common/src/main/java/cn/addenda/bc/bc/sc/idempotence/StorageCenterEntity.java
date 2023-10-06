@@ -31,4 +31,8 @@ public class StorageCenterEntity {
 
     private LocalDateTime expireTime;
 
+    public String getFullKey() {
+        return namespace + ":" + prefix + ":" + key;
+    }
+
 }

@@ -9,6 +9,7 @@ import cn.addenda.bc.bc.sc.util.SpELUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
 import java.util.Properties;
@@ -75,7 +76,9 @@ public class LockAspectSupport {
                 String lockFailedMsg = lockedAttr.getLockFailedMsg();
                 Properties properties = new Properties();
                 properties.put("prefix", lockedAttr.getPrefix());
-                properties.put("spEL", lockedAttr.getSpEL());
+                if (StringUtils.hasLength(spEL)) {
+                    properties.put("spEL", lockedAttr.getSpEL());
+                }
                 properties.put("timeUnit", lockedAttr.getTimeUnit());
                 properties.put("waitTime", lockedAttr.getWaitTime());
                 properties.put("waitTimeStr", lockedAttr.getWaitTime() + " " + TimeUnitUtils.convertTimeUnit(lockedAttr.getTimeUnit()));

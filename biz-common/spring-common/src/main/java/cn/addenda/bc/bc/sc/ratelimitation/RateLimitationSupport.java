@@ -82,7 +82,9 @@ public class RateLimitationSupport implements ApplicationContextAware, Environme
 
         Properties properties = new Properties();
         properties.put("prefix", attr.getPrefix());
-        properties.put("spEL", attr.getSpEL());
+        if (StringUtils.hasLength(spEL)) {
+            properties.put("spEL", attr.getSpEL());
+        }
         properties.put("timeUnit", attr.getTimeUnit());
         properties.put("ttl", attr.getTtl());
         properties.put("ttlStr", attr.getTtl() + " " + TimeUnitUtils.convertTimeUnit(attr.getTimeUnit()));

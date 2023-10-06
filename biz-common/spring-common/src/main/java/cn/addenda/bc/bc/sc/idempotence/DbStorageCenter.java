@@ -13,6 +13,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 import org.springframework.jdbc.support.SQLExceptionTranslator;
+import org.springframework.util.CollectionUtils;
 
 import javax.sql.DataSource;
 import java.io.PrintWriter;
@@ -161,13 +162,13 @@ public class DbStorageCenter implements StorageCenter, InitializingBean, Applica
     @Override
     public void saveExceptionLog(IdempotenceParamWrapper param, IdempotenceScenario scenario, Object[] arguments, ConsumeStage consumeStage, String message, Throwable throwable) {
         String argsJson = JacksonUtils.objectToString(arguments);
-        log.error("Consume [{}] error. Scenario: [{}], ConsumeMode: [{}]. ConsumeStage: [{}]. Message: [{}]. Arguments: [{}]. XId: [{}]",
+        log.error("Consume [{}] error. Scenario: [{}], ConsumeMode: [{}]. ConsumeStage: [{}]. Message: [{}]. Arguments: [{}]. XId: [{}].",
             param.getFullKey(), scenario, param.getConsumeMode(), consumeStage, argsJson, message, param.getXId(), throwable);
         try {
             doSaveLog(param, consumeStage, scenario, argsJson, message, throwable);
         } catch (Exception e) {
-            log.error("Save log error [{}]. Scenario: [{}], ConsumeMode: [{}]. ConsumeStage: [{}]. Message: [{}]. Arguments: [{}].",
-                param.getFullKey(), scenario, param.getConsumeMode(), consumeStage, argsJson, throwable);
+            log.error("Save log error [{}]. Scenario: [{}], ConsumeMode: [{}]. ConsumeStage: [{}]. Message: [{}]. Arguments: [{}]. XId: [{}].",
+                param.getFullKey(), scenario, param.getConsumeMode(), consumeStage, argsJson, param.getXId(), e);
         }
     }
 
@@ -236,17 +237,21 @@ public class DbStorageCenter implements StorageCenter, InitializingBean, Applica
                 return false;
             }
 
-            // 数据存到his表里面
-            try (PreparedStatement ps = connection.prepareStatement(SAVE_HIS_SQL)) {
-                doSetSaveHistoryPs(storageCenterEntity, ps);
-                ps.executeUpdate();
-            }
-
             // 删除记录表里的数据
+            int result;
             try (PreparedStatement ps = connection.prepareStatement(DELETE_SQL)) {
                 ps.setLong(1, storageCenterEntity.getId());
-                ps.executeUpdate();
+                result = ps.executeUpdate();
             }
+
+            // 数据存到his表里面
+            if (result == 1) {
+                try (PreparedStatement ps = connection.prepareStatement(SAVE_HIS_SQL)) {
+                    doSetSaveHistoryPs(storageCenterEntity, ps);
+                    ps.executeUpdate();
+                }
+            }
+
             connection.commit();
         } catch (SQLException e) {
             if (connection != null) {
@@ -289,23 +294,27 @@ public class DbStorageCenter implements StorageCenter, InitializingBean, Applica
                     deleteResults = ps.executeBatch();
                 }
 
+                List<String> deleteKey = new ArrayList<>();
                 try (PreparedStatement ps = connection.prepareStatement(SAVE_HIS_SQL)) {
-                    boolean fg = false;
                     for (int i = 0; i < storageCenterEntityList.size(); i++) {
                         int deleteResult = deleteResults[i];
                         if (deleteResult == 1) {
-                            fg = true;
-                            doSetSaveHistoryPs(storageCenterEntityList.get(i), ps);
+                            StorageCenterEntity storageCenterEntity = storageCenterEntityList.get(i);
+                            deleteKey.add(storageCenterEntity.getFullKey());
+                            doSetSaveHistoryPs(storageCenterEntity, ps);
                             ps.addBatch();
                         } else if (deleteResult != 0) {
                             log.error("清理过期key-删除操作的结果异常：当前索引[{}]，ID集合[{}]，结果集合[{}]。", i,
                                 storageCenterEntityList.stream().map(s -> String.valueOf(s.getId())).collect(Collectors.joining(",")),
                                 Arrays.stream(deleteResults).mapToObj(String::valueOf).collect(Collectors.joining(",")));
                         }
-                        if (fg) {
+                        if (!CollectionUtils.isEmpty(deleteKey)) {
                             ps.executeBatch();
                         }
                     }
+                }
+                if (!CollectionUtils.isEmpty(deleteKey)) {
+                    log.info("清理过期的key: [{}]。", String.join(",", deleteKey));
                 }
             }
             connection.commit();
@@ -374,12 +383,14 @@ public class DbStorageCenter implements StorageCenter, InitializingBean, Applica
     @Override
     public void onApplicationEvent(ContextClosedEvent event) {
         try {
+            log.error("DbStorageCenter-ClearExpiredKey 开始关闭：{}。", delayer);
             delayer.shutdown();
             if (delayer.awaitTermination(1, TimeUnit.MINUTES)) {
                 log.error("DbStorageCenter-ClearExpiredKey 关闭后等待超过1分钟未终止：{}。", delayer);
             }
+            log.error("DbStorageCenter-ClearExpiredKey 正常关闭：{}。", delayer);
         } catch (Exception e) {
-            log.error("DbStorageCenter-ClearExpiredKey 关闭异常：{}。", delayer, e);
+            log.error("DbStorageCenter-ClearExpiredKey 异常关闭：{}！", delayer, e);
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }

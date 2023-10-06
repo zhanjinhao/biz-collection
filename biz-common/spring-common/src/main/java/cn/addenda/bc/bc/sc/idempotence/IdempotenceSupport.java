@@ -214,7 +214,9 @@ public class IdempotenceSupport implements EnvironmentAware, InitializingBean, A
                 String repeatConsumptionMsg = attr.getRepeatConsumptionMsg();
                 Properties properties = new Properties();
                 properties.put("prefix", attr.getPrefix());
-                properties.put("spEL", attr.getSpEL());
+                if (StringUtils.hasLength(attr.getSpEL())) {
+                    properties.put("spEL", attr.getSpEL());
+                }
                 properties.put("repeatConsumptionMsg", attr.getRepeatConsumptionMsg());
                 properties.put("scenario", attr.getScenario());
                 properties.put("storageCenter", attr.getStorageCenter());

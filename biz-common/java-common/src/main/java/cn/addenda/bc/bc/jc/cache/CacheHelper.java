@@ -600,12 +600,14 @@ public class CacheHelper implements DisposableBean {
     public void destroy() throws Exception {
         if (cacheBuildEs != null) {
             try {
+                log.info("CacheHelper-Rebuild 开始关闭。");
                 cacheBuildEs.shutdown();
                 if (!cacheBuildEs.awaitTermination(1, TimeUnit.MINUTES)) {
                     log.error("CacheHelper-Rebuild 关闭后等待超过1分钟未终止：{}。", cacheBuildEs);
                 }
+                log.info("CacheHelper-Rebuild 正常关闭。");
             } catch (Exception e) {
-                log.error("CacheHelper-Rebuild 关闭异常：{}。", cacheBuildEs, e);
+                log.error("CacheHelper-Rebuild 异常关闭：{}！", cacheBuildEs, e);
                 if (e instanceof InterruptedException) {
                     Thread.currentThread().interrupt();
                 }
