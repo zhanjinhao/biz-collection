@@ -2,6 +2,7 @@ package cn.addenda.bc.bc.sc.util;
 
 import cn.addenda.bc.bc.jc.util.JacksonUtils;
 import cn.addenda.bc.bc.sc.SpringCommonException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
@@ -15,6 +16,7 @@ import java.lang.reflect.Method;
  * @author addenda
  * @since 2023/7/29 19:08
  */
+@Slf4j
 public class SpELUtils {
 
     private SpELUtils() {
@@ -57,6 +59,40 @@ public class SpELUtils {
             return value.toString();
         }
         return spEL;
+    }
+
+    public static Object getObject(String spEL, Object argument) {
+        Expression exp = SPEL_PARSER.parseExpression(spEL);
+        StandardEvaluationContext context = new StandardEvaluationContext(argument);
+        return exp.getValue(context);
+    }
+
+    public static Object getObjectIgnoreException(String spEL, Object argument) {
+        try {
+            Expression exp = SPEL_PARSER.parseExpression(spEL);
+            StandardEvaluationContext context = new StandardEvaluationContext(argument);
+            return exp.getValue(context);
+        } catch (Exception e) {
+            log.debug("SpringEL执行失败，spEL[{}]，argument[{}]。", spEL, argument);
+            return null;
+        }
+    }
+
+    public static <T> T getObject(String spEL, Object argument, Class<T> returnClass) {
+        Expression exp = SPEL_PARSER.parseExpression(spEL);
+        StandardEvaluationContext context = new StandardEvaluationContext(argument);
+        return exp.getValue(context, returnClass);
+    }
+
+    public static <T> T getObjectIgnoreException(String spEL, Object argument, Class<T> returnClass) {
+        try {
+            Expression exp = SPEL_PARSER.parseExpression(spEL);
+            StandardEvaluationContext context = new StandardEvaluationContext(argument);
+            return exp.getValue(context, returnClass);
+        } catch (Exception e) {
+            log.debug("SpringEL执行失败，spEL[{}]，argument[{}]，returnClass[{}]。", spEL, argument, returnClass);
+            return null;
+        }
     }
 
 }

@@ -1,8 +1,3 @@
-server:
-  port: 21882
-  servlet:
-    context-path: /seckill
-
 spring:
   application:
     name: seckill-service
