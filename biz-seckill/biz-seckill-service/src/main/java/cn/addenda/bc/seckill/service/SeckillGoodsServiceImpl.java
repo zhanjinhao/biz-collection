@@ -275,11 +275,11 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService, Initializin
         String userId = UserContext.getUserId();
 
         return rateLimitationHelper.rateLimit(
-            "biz-seckill:seckill", () -> doSeckillWithToken(id, userId), userId);
+            "seckill-service:ratelimitation:global", () -> doSeckillWithToken(id, userId), userId);
     }
 
     @Override
-    @RateLimited(rateLimiterAllocator = "biz-seckill:seckill", spEL = SpELUtils.USER_ID)
+    @RateLimited(rateLimiterAllocator = "seckill-service:ratelimitation:global", spEL = SpELUtils.USER_ID)
     public Boolean seckillWithTokenAndRateLimitation2(Long id) {
         assertSeckillActive(id);
         String userId = UserContext.getUserId();

@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: short-link-service
+  mvc:
+    throw-exception-if-no-handler-found: true
+
+  cloud:
+    nacos:
+      server-addr: ${nacosServer}:${nacosPort}
+      username: ${nacosUserName}
+      password: ${nacosPassword}
+      discovery:
+        namespace: ${nacosNamespace}
+        group: biz-collection
+      config:
+        file-extension: yaml
+        extension-configs:
+          - data-id: short-link-jdbc.yaml
+            refresh: true
+            group: biz-collection
+          - data-id: short-link-redis.yaml
+            refresh: true
+            group: biz-collection
+        group: biz-collection
+        namespace: ${nacosNamespace}
+        enabled: true
+        refresh-enabled: true
+  config:
+    import:
+      - nacos:short-link-service.yaml?refresh=true
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    local-cache-scope: statement
+  type-handlers-package: cn.addenda.bc.bc.mc.typehandler
+
+biz-collection:
+  idempotence:
+    db:
+      enable: false

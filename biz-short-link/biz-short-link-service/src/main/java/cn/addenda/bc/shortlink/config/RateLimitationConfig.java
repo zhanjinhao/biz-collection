@@ -1,4 +1,4 @@
-package cn.addenda.bc.flightschedule.config;
+package cn.addenda.bc.shortlink.config;
 
 import cn.addenda.bc.bc.jc.ratelimiter.RateLimiter;
 import cn.addenda.bc.bc.rc.allocator.ExternallyConfiguredRedissonRateLimiterAllocator;

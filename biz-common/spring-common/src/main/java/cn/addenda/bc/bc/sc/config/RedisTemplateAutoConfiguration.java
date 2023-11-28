@@ -1,5 +1,6 @@
-package cn.addenda.bc.gateway.config;
+package cn.addenda.bc.bc.sc.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -12,8 +13,9 @@ import org.springframework.data.redis.serializer.RedisSerializer;
  * @since 2022/10/21 20:08
  */
 @Configuration
-public class RedisTemplateConfig {
+public class RedisTemplateAutoConfiguration {
 
+    @ConditionalOnMissingBean(RedisTemplate.class)
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
         // 创建Template

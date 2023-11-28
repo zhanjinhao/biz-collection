@@ -1,2 +1,7 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-    cn.addenda.bc.bc.sc.config.SpringCommonAutoConfiguration
+    cn.addenda.bc.bc.sc.config.SpringCommonAutoConfiguration,\
+    cn.addenda.bc.bc.sc.config.RedisTemplateAutoConfiguration,\
+    cn.addenda.bc.bc.sc.config.RedissonAutoConfiguration,\
+    cn.addenda.bc.bc.sc.config.LockAllocatorAutoConfiguration,\
+    cn.addenda.bc.bc.sc.config.LockAutoConfiguration,\
+    cn.addenda.bc.bc.sc.config.IdempotenceAutoConfiguration

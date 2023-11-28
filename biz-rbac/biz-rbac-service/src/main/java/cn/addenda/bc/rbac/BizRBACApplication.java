@@ -13,8 +13,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * @author addenda
  * @since 2022/1/14 15:44
  */
-
-@EnableLockManagement(namespace = "biz-rbac", order = Ordered.LOWEST_PRECEDENCE - 60)
+@EnableLockManagement(namespace = "rbac-service", order = Ordered.LOWEST_PRECEDENCE - 60)
 @EnableTransactionManagement(order = Ordered.LOWEST_PRECEDENCE - 70)
 @EnableMultiDataSource(order = Ordered.LOWEST_PRECEDENCE - 80)
 @EnableArgResLog(order = Ordered.LOWEST_PRECEDENCE - 90)
